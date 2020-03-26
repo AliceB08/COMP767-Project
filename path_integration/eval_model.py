@@ -13,6 +13,7 @@ from model_utils import get_latest_model_file
 from scores import GridScorer
 import utils
 
+
 N_EPOCHS = 1000
 STEPS_PER_EPOCH = 20
 ENV_SIZE = 2.2
@@ -26,81 +27,80 @@ WEIGHT_DECAY = 1e-5
 LR = 1e-5
 MOMENTUM = 0.9
 
-#loss ops:
-#loss ops:
-logsoftmax = nn.LogSoftmax(dim=-1)
-def cross_entropy(pred, soft_targets):
-    return torch.sum(- soft_targets * logsoftmax(pred), -1)
+if __name__ == "__main__":
+    # loss ops:
+    logsoftmax = nn.LogSoftmax(dim=-1)
 
-data_params = {'batch_size': BATCH_SIZE,
-          'shuffle': False,
-          'num_workers': 8, # num cpus,
-          }
+    def cross_entropy(pred, soft_targets):
+        return torch.sum(-soft_targets * logsoftmax(pred), -1)
 
-dataset = Dataset(batch_size=data_params['batch_size'])
-data_generator = data.DataLoader(dataset, **data_params)
+    data_params = {
+        "batch_size": BATCH_SIZE,
+        "shuffle": False,
+        "num_workers": 8,  # num cpus,
+    }
 
-# Create the ensembles that provide targets during training
-place_cell_ensembles = utils.get_place_cell_ensembles(
+    dataset = Dataset(batch_size=data_params["batch_size"])
+    data_generator = data.DataLoader(dataset, **data_params)
+
+    # Create the ensembles that provide targets during training
+    place_cell_ensembles = utils.get_place_cell_ensembles(
         env_size=ENV_SIZE,
         neurons_seed=SEED,
-        targets_type='softmax',
-        lstm_init_type='softmax',
+        targets_type="softmax",
+        lstm_init_type="softmax",
         n_pc=N_PC,
-        pc_scale=[0.01])
+        pc_scale=[0.01],
+    )
 
-head_direction_ensembles = utils.get_head_direction_ensembles(
+    head_direction_ensembles = utils.get_head_direction_ensembles(
         neurons_seed=SEED,
-        targets_type='softmax',
-        lstm_init_type='softmax',
+        targets_type="softmax",
+        lstm_init_type="softmax",
         n_hdc=N_HDC,
-        hdc_concentration=[20.])
+        hdc_concentration=[20.0],
+    )
 
-ensembles = place_cell_ensembles + head_direction_ensembles
+    ensembles = place_cell_ensembles + head_direction_ensembles
 
-place_cell_ensembles = [ensembles[0]]
-head_direction_ensembles = [ensembles[1]]
+    place_cell_ensembles = [ensembles[0]]
+    head_direction_ensembles = [ensembles[1]]
 
-place_cell_ensembles[0].means = torch.Tensor(np.load('./weights/pc_means.npy'))
-place_cell_ensembles[0].variances = torch.Tensor(np.load('./weights/pc_vars.npy'))
+    place_cell_ensembles[0].means = torch.Tensor(np.load("./weights/pc_means.npy"))
+    place_cell_ensembles[0].variances = torch.Tensor(np.load("./weights/pc_vars.npy"))
 
-head_direction_ensembles[0].means = torch.Tensor(np.load('./weights/hd_means.npy'))
-head_direction_ensembles[0].kappa = torch.Tensor(np.load('./weights/hd_kappa.npy'))
+    head_direction_ensembles[0].means = torch.Tensor(np.load("./weights/hd_means.npy"))
+    head_direction_ensembles[0].kappa = torch.Tensor(np.load("./weights/hd_kappa.npy"))
 
-target_ensembles = place_cell_ensembles + head_direction_ensembles
-model = GridTorch(target_ensembles, (BATCH_SIZE, 100, 3), tf_weights_loc='./weights/')
+    target_ensembles = place_cell_ensembles + head_direction_ensembles
+    model = GridTorch(
+        target_ensembles, (BATCH_SIZE, 100, 3), tf_weights_loc="./weights/"
+    )
 
-for X, y in data_generator:
-    break
+    for X, y in data_generator:
+        break
 
-init_pos , init_hd, ego_vel = X
-target_pos, target_hd = y
+    init_pos, init_hd, ego_vel = X
+    target_pos, target_hd = y
 
-initial_conds = utils.encode_initial_conditions(init_pos ,
-                                                init_hd,
-                                                place_cell_ensembles,
-                                                head_direction_ensembles)
-ensembles_targets = utils.encode_targets(target_pos,
-                                        target_hd,
-                                        place_cell_ensembles,
-                                        head_direction_ensembles)
+    initial_conds = utils.encode_initial_conditions(
+        init_pos, init_hd, place_cell_ensembles, head_direction_ensembles
+    )
+    ensembles_targets = utils.encode_targets(
+        target_pos, target_hd, place_cell_ensembles, head_direction_ensembles
+    )
 
+    model.eval()
 
-model.eval()
+    outs = model.forward(ego_vel.transpose(1, 0), initial_conds)
+    logits_hd, logits_pc, bottleneck_acts, lstm_states, _ = outs
+    acts = bottleneck_acts.transpose(1, 0).detach().numpy()
+    pos_xy = target_pos.detach().numpy()
 
-outs = model.forward(ego_vel.transpose(1, 0), initial_conds)
-logits_hd, logits_pc, bottleneck_acts, lstm_states, _ = outs
+    # Create scorer objects
+    starts = [0.2] * 10
+    ends = np.linspace(0.4, 1.0, num=10)
+    masks_parameters = zip(starts, ends.tolist())
+    scorer = GridScorer(20, ((-1.1, 1.1), (-1.1, 1.1)), masks_parameters)
 
-
-acts = bottleneck_acts.transpose(1,0).detach().numpy()
-pos_xy = target_pos.detach().numpy()
-
-
-# Create scorer objects
-starts = [0.2] * 10
-ends = np.linspace(0.4, 1.0, num=10)
-masks_parameters = zip(starts, ends.tolist())
-scorer = GridScorer(20, ((-1.1, 1.1), (-1.1, 1.1)),
-                                    masks_parameters)
-
-scoress = utils.get_scores_and_plot(scorer, pos_xy, acts, '.', 'test.pdf')
+    scoress = utils.get_scores_and_plot(scorer, pos_xy, acts, ".", "test.pdf")

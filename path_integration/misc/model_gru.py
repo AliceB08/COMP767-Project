@@ -78,26 +78,26 @@ class GridTorch(nn.Module):
 
     def init_tf_weights(self, loc):
 
-        self.pc_logits.bias = load_tf_param(loc + 'grid_cells_core_pc_logits_b:0.npy')
-        self.pc_logits.weight = load_tf_param(loc + 'grid_cells_core_pc_logits_w:0.npy')
+        self.pc_logits.bias = load_tf_param(loc + 'grid_cells_core_pc_logits_b_0.npy')
+        self.pc_logits.weight = load_tf_param(loc + 'grid_cells_core_pc_logits_w_0.npy')
 
-        self.hd_logits.bias = load_tf_param(loc + 'grid_cells_core_pc_logits_1_b:0.npy')
-        self.hd_logits.weight = load_tf_param(loc + 'grid_cells_core_pc_logits_1_w:0.npy')
+        self.hd_logits.bias = load_tf_param(loc + 'grid_cells_core_pc_logits_1_b_0.npy')
+        self.hd_logits.weight = load_tf_param(loc + 'grid_cells_core_pc_logits_1_w_0.npy')
 
-        self.bottleneck.weight = load_tf_param(loc + 'grid_cells_core_bottleneck_w:0.npy')
+        self.bottleneck.weight = load_tf_param(loc + 'grid_cells_core_bottleneck_w_0.npy')
 
-        self.state_embed.bias = load_tf_param(loc + "grid_cell_supervised_state_init_b:0.npy")
-        self.state_embed.weight = load_tf_param(loc + "grid_cell_supervised_state_init_w:0.npy")
+        self.state_embed.bias = load_tf_param(loc + "grid_cell_supervised_state_init_b_0.npy")
+        self.state_embed.weight = load_tf_param(loc + "grid_cell_supervised_state_init_w_0.npy")
 
-        self.rnn._Wz = load_tf_param(loc + 'grid_cells_core_gru_wz:0.npy', T=False)
-        self.rnn._Wh = load_tf_param(loc + 'grid_cells_core_gru_wh:0.npy', T=False)
-        self.rnn._Wr = load_tf_param(loc + 'grid_cells_core_gru_wr:0.npy', T=False)
-        self.rnn._Uz = load_tf_param(loc + 'grid_cells_core_gru_uz:0.npy', T=False)
-        self.rnn._Uh = load_tf_param(loc + 'grid_cells_core_gru_uh:0.npy', T=False)
-        self.rnn._Ur = load_tf_param(loc + 'grid_cells_core_gru_ur:0.npy', T=False)
-        self.rnn._bz = load_tf_param(loc + 'grid_cells_core_gru_bz:0.npy', T=False)
-        self.rnn._bh = load_tf_param(loc + 'grid_cells_core_gru_bh:0.npy', T=False)
-        self.rnn._br = load_tf_param(loc + 'grid_cells_core_gru_br:0.npy', T=False)
+        self.rnn._Wz = load_tf_param(loc + 'grid_cells_core_gru_wz_0.npy', T=False)
+        self.rnn._Wh = load_tf_param(loc + 'grid_cells_core_gru_wh_0.npy', T=False)
+        self.rnn._Wr = load_tf_param(loc + 'grid_cells_core_gru_wr_0.npy', T=False)
+        self.rnn._Uz = load_tf_param(loc + 'grid_cells_core_gru_uz_0.npy', T=False)
+        self.rnn._Uh = load_tf_param(loc + 'grid_cells_core_gru_uh_0.npy', T=False)
+        self.rnn._Ur = load_tf_param(loc + 'grid_cells_core_gru_ur_0.npy', T=False)
+        self.rnn._bz = load_tf_param(loc + 'grid_cells_core_gru_bz_0.npy', T=False)
+        self.rnn._bh = load_tf_param(loc + 'grid_cells_core_gru_bh_0.npy', T=False)
+        self.rnn._br = load_tf_param(loc + 'grid_cells_core_gru_br_0.npy', T=False)
 
 
 

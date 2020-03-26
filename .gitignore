@@ -9,3 +9,4 @@ data/*
 # Other
 tensorflow_implementation/*
 */path_integration/experiments/*
+**/*.pdf

@@ -92,34 +92,34 @@ class GridTorch(nn.Module):
 
     def init_tf_weights(self, loc):
 
-        self.pc_logits.bias = load_tf_param(loc + "grid_cells_core_pc_logits_b:0.npy")
-        self.pc_logits.weight = load_tf_param(loc + "grid_cells_core_pc_logits_w:0.npy")
+        self.pc_logits.bias = load_tf_param(loc + "grid_cells_core_pc_logits_b_0.npy")
+        self.pc_logits.weight = load_tf_param(loc + "grid_cells_core_pc_logits_w_0.npy")
 
-        self.hd_logits.bias = load_tf_param(loc + "grid_cells_core_pc_logits_1_b:0.npy")
+        self.hd_logits.bias = load_tf_param(loc + "grid_cells_core_pc_logits_1_b_0.npy")
         self.hd_logits.weight = load_tf_param(
-            loc + "grid_cells_core_pc_logits_1_w:0.npy"
+            loc + "grid_cells_core_pc_logits_1_w_0.npy"
         )
 
         self.bottleneck.weight = load_tf_param(
-            loc + "grid_cells_core_bottleneck_w:0.npy"
+            loc + "grid_cells_core_bottleneck_w_0.npy"
         )
 
         self.state_embed.bias = load_tf_param(
-            loc + "grid_cell_supervised_state_init_b:0.npy"
+            loc + "grid_cell_supervised_state_init_b_0.npy"
         )
         self.state_embed.weight = load_tf_param(
-            loc + "grid_cell_supervised_state_init_w:0.npy"
+            loc + "grid_cell_supervised_state_init_w_0.npy"
         )
 
         self.cell_embed.bias = load_tf_param(
-            loc + "grid_cell_supervised_cell_init_b:0.npy"
+            loc + "grid_cell_supervised_cell_init_b_0.npy"
         )
         self.cell_embed.weight = load_tf_param(
-            loc + "grid_cell_supervised_cell_init_w:0.npy"
+            loc + "grid_cell_supervised_cell_init_w_0.npy"
         )
 
-        lstm_ws = load_tf_param(loc + "grid_cells_core_lstm_w_gates:0.npy")
-        lstm_bs = load_tf_param(loc + "grid_cells_core_lstm_b_gates:0.npy")
+        lstm_ws = load_tf_param(loc + "grid_cells_core_lstm_w_gates_0.npy")
+        lstm_bs = load_tf_param(loc + "grid_cells_core_lstm_b_gates_0.npy")
 
         self.rnn.weight = nn.Parameter(lstm_ws.transpose(1, 0))
         self.rnn.bias = nn.Parameter(lstm_bs)
@@ -175,7 +175,6 @@ class TFLSTMCell(nn.Module):
 
             self.weight = nn.Parameter(torch.cat(ws, dim=1), requires_grad=True)
             self.bias = nn.Parameter(torch.zeros((n_units * 4,)), requires_grad=True)
-
 
     def forward(self, x_t, state):
         """
