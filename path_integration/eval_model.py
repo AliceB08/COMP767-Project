@@ -3,16 +3,15 @@ Create ratemaps for a trained network
 """
 import torch
 from torch import nn
+from torch.utils import data
+from dataloading import Dataset
 import glob
-from model_lstm import GridTorch
-from model_utils import get_latest_model_file
 import numpy as np
 
+from model_lstm import GridTorch
+from model_utils import get_latest_model_file
+from scores import GridScorer
 import utils
-
-from dataloading import Dataset
-from torch.utils import data
-import scores
 
 N_EPOCHS = 1000
 STEPS_PER_EPOCH = 20
@@ -62,14 +61,14 @@ ensembles = place_cell_ensembles + head_direction_ensembles
 place_cell_ensembles = [ensembles[0]]
 head_direction_ensembles = [ensembles[1]]
 
-place_cell_ensembles[0].means = torch.Tensor(np.load('weights/pc_means.npy'))
-place_cell_ensembles[0].variances = torch.Tensor(np.load('weights/pc_vars.npy'))
+place_cell_ensembles[0].means = torch.Tensor(np.load('./weights/pc_means.npy'))
+place_cell_ensembles[0].variances = torch.Tensor(np.load('./weights/pc_vars.npy'))
 
-head_direction_ensembles[0].means = torch.Tensor(np.load('weights/hd_means.npy'))
-head_direction_ensembles[0].kappa = torch.Tensor(np.load('weights/hd_kappa.npy'))
+head_direction_ensembles[0].means = torch.Tensor(np.load('./weights/hd_means.npy'))
+head_direction_ensembles[0].kappa = torch.Tensor(np.load('./weights/hd_kappa.npy'))
 
 target_ensembles = place_cell_ensembles + head_direction_ensembles
-model = GridTorch(target_ensembles, (BATCH_SIZE, 100, 3), tf_weights_loc='weights/')
+model = GridTorch(target_ensembles, (BATCH_SIZE, 100, 3), tf_weights_loc='./weights/')
 
 for X, y in data_generator:
     break
@@ -101,7 +100,7 @@ pos_xy = target_pos.detach().numpy()
 starts = [0.2] * 10
 ends = np.linspace(0.4, 1.0, num=10)
 masks_parameters = zip(starts, ends.tolist())
-scorer = scores.GridScorer(20, ((-1.1, 1.1), (-1.1, 1.1)),
+scorer = GridScorer(20, ((-1.1, 1.1), (-1.1, 1.1)),
                                     masks_parameters)
 
 scoress = utils.get_scores_and_plot(scorer, pos_xy, acts, '.', 'test.pdf')

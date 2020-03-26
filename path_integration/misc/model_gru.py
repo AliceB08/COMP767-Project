@@ -1,6 +1,7 @@
 import torch
 from torch import nn
 import numpy as np
+
 def truncated_normal_(tensor, mean=0, std=1):
     # https://discuss.pytorch.org/t/implementing-truncated-normal-initializer/4778/15
     size = tensor.shape
@@ -156,10 +157,10 @@ class TFGRUCell(nn.Module):
         """Gated recurrent unit (GRU) with nunits cells."""
 
 
-        z = nn.functional.sigmoid(torch.matmul(x_t, self._Wz) +
+        z = torch.sigmoid(torch.matmul(x_t, self._Wz) +
                        torch.matmul(state, self._Uz) + self._bz)
 
-        r = nn.functional.sigmoid(torch.matmul(x_t, self._Wr) +
+        r = torch.sigmoid(torch.matmul(x_t, self._Wr) +
                    torch.matmul(state, self._Ur) + self._br)
 
         h_twiddle = torch.tanh(torch.matmul(x_t, self._Wh) +

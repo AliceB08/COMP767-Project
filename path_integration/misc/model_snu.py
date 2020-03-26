@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 import numpy as np
-from all_or_nothing import AllOrNothing
+from misc.all_or_nothing import AllOrNothing
 
 
 aon = AllOrNothing.apply

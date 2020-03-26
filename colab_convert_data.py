@@ -169,7 +169,7 @@ train_traj = data_reader.read(batch_size=10000)
 in_pos, in_hd, ego_vel, target_pos, target_hd = train_traj
 with tf.train.SingularMonitoredSession() as sess:
 
-    for i in range(99):
+    for i in range(100):
         res = sess.run({
             "init_pos": in_pos,
             "init_hd" :in_hd,

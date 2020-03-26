@@ -1,3 +1,11 @@
+# Python cache
+**/__pycache__/*
+
+# Possible data location:
 data/*
 **/*.tfrecord
+**/*.pt
+
+# Other
 tensorflow_implementation/*
+*/path_integration/experiments/*

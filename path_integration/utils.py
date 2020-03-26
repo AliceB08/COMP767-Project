@@ -32,7 +32,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 
-import ensembles  # pylint: disable=g-bad-import-order
+from ensembles import PlaceCellEnsemble, HeadDirectionCellEnsemble
 
 xrange = range
 
@@ -44,7 +44,7 @@ def get_place_cell_ensembles(
 ):
     """Create the ensembles for the Place cells."""
     place_cell_ensembles = [
-        ensembles.PlaceCellEnsemble(
+        PlaceCellEnsemble(
             n,
             stdev=s,
             pos_min=-env_size / 2.0,
@@ -63,7 +63,7 @@ def get_head_direction_ensembles(
 ):
     """Create the ensembles for the Head direction cells."""
     head_direction_ensembles = [
-        ensembles.HeadDirectionCellEnsemble(
+        HeadDirectionCellEnsemble(
             n,
             concentration=con,
             seed=neurons_seed,
