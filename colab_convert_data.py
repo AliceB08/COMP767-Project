@@ -164,7 +164,7 @@ Convert TFRecord data to pytorch data.
 Dataset can be found here:
 https://console.cloud.google.com/storage/browser/grid-cells-datasets
 """
-data_reader = DataReader('square_room', 'drive/My Drive/COMP767/Project/data/', num_threads=8)
+data_reader = DataReader('square_room', 'drive/My Drive/COMP767-Project/data/', num_threads=8)
 train_traj = data_reader.read(batch_size=10000)
 in_pos, in_hd, ego_vel, target_pos, target_hd = train_traj
 with tf.train.SingularMonitoredSession() as sess:
@@ -178,4 +178,4 @@ with tf.train.SingularMonitoredSession() as sess:
             "target_hd":target_hd,
         })
 
-        torch.save(res, 'drive/My Drive/COMP767/Project/data/torch/{}-99.pt'.format(i))
+        torch.save(res, 'drive/My Drive/COMP767-Project/data/torch/{}-99.pt'.format(i))
