@@ -1,58 +1,31 @@
-# Copyright 2018 Google LLC
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     https://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ==============================================================================
-
-"""Supervised training for the Grid cell network.
-
--------------
-
-Adapted for pytorch, Lucas Pompe, 2019
-"""
 import torch
 from torch.utils import data
 from torch import nn
 import numpy as np
 from tqdm import tqdm
+import time
 
-# import model_snu as model
-# from misc.model_snu import *
-# from ensembles import *
 from dataloading import Dataset
 from model_utils import get_latest_model_file, get_model_epoch
 from model_lstm import GridTorch
-
 import utils
-
 from misc.rate_coding import PadCoder
 
-# N_EPOCHS = 1000
-N_EPOCHS = 2
-STEPS_PER_EPOCH = 100
 ENV_SIZE = 2.2
-BATCH_SIZE = 100
+N_EPOCHS = 2 #1000
+STEPS_PER_EPOCH = 100
+BATCH_SIZE = 128
 GRAD_CLIPPING = 1e-5
-SEED = 9101
 N_PC = [256]
 N_HDC = [12]
 BOTTLENECK_DROPOUT = 0.5
 WEIGHT_DECAY = 1e-5
 LR = 1e-5
 MOMENTUM = 0.9
-TIME = 50
-PAUSE_TIME = None
 SAVE_LOC = "./experiments/"
+USE_PREVIOUSLY_TRAINED_MODEL = True
 
+SEED = 9101
 torch.manual_seed(SEED)
 np.random.seed(SEED)
 
@@ -64,7 +37,8 @@ print("USING DEVICE:", device)
 data_params = {
     "batch_size": BATCH_SIZE,
     "shuffle": True,
-    "num_workers": 6,  # num cpus,
+    "num_workers": 1,  # num cpus,
+    # "num_workers": 6,  # num cpus,
 }
 
 test_params = {
@@ -78,39 +52,18 @@ data_generator = data.DataLoader(dataset, **data_params)
 test_generator = data.DataLoader(dataset, **test_params)
 
 # Create the ensembles that provide targets during training
-place_cell_ensembles = utils.get_place_cell_ensembles(
-    env_size=ENV_SIZE,
-    neurons_seed=SEED,
-    targets_type="softmax",
-    lstm_init_type="softmax",
-    n_pc=N_PC,
-    pc_scale=[0.01],
-)
-
-head_direction_ensembles = utils.get_head_direction_ensembles(
-    neurons_seed=SEED,
-    targets_type="softmax",
-    lstm_init_type="softmax",
-    n_hdc=N_HDC,
-    hdc_concentration=[20.0],
-)
-
+place_cell_ensembles = utils.get_place_cell_ensembles(env_size=ENV_SIZE, neurons_seed=SEED, n_pc=N_PC)
+head_direction_ensembles = utils.get_head_direction_ensembles(neurons_seed=SEED, n_hdc=N_HDC)
 target_ensembles = place_cell_ensembles + head_direction_ensembles
 
+model = GridTorch(target_ensembles).to(device)
 
-model = GridTorch(target_ensembles, (BATCH_SIZE, 100, 3)).to(device)
-params = model.parameters()
-
-
-saved_model_file = get_latest_model_file(SAVE_LOC)
 start_epoch = 0
 
-if saved_model_file:
-    state_dict = torch.load(saved_model_file)
-    if use_cuda:
-        for k, v in state_dict.items():
-            state_dict[k] = v.cuda()
-    model.load_state_dict(state_dict)
+if USE_PREVIOUSLY_TRAINED_MODEL:
+    saved_model_file = get_latest_model_file(SAVE_LOC)
+    model.load_state_dict(torch.load(saved_model_file))
+    model.to(device)
     start_epoch = get_model_epoch(saved_model_file)
     print("RESTORING MODEL AT:", saved_model_file)
     print("STARTING AT EPOCH:", start_epoch)
@@ -124,33 +77,22 @@ def cross_entropy(pred, soft_targets):
 
 
 # Optimisation opts
-optimiser = torch.optim.RMSprop(params, lr=LR, momentum=MOMENTUM, alpha=0.9, eps=1e-10)
+optimiser = torch.optim.RMSprop(model.parameters(), lr=LR, momentum=MOMENTUM, alpha=0.9, eps=1e-10)
 
 
-to_cuda = lambda x: x.cuda()
-
-
-def encode_inputs(
-    X, y, place_cell_ensembles, head_direction_ensembles, cuda=True, coder=None
-):
-    init_pos, init_hd, ego_vel = X
+def encode_inputs(X, y, place_cell_ensembles, head_direction_ensembles, coder=None):
+    init_pos, init_hd, inputs = X
     target_pos, target_hd = y
-    initial_conds = utils.encode_initial_conditions(
-        init_pos, init_hd, place_cell_ensembles, head_direction_ensembles
-    )
 
-    ensembles_targets = utils.encode_targets(
-        target_pos, target_hd, place_cell_ensembles, head_direction_ensembles
-    )
-    inputs = ego_vel
-    if cuda:
+    initial_conds = utils.encode_initial_conditions(init_pos, init_hd, place_cell_ensembles, head_direction_ensembles)
+    ensembles_targets = utils.encode_targets(target_pos, target_hd, place_cell_ensembles, head_direction_ensembles)
 
-        init_pos = init_pos.cuda()
-        init_hd = init_hd.cuda()
-        inputs = inputs.cuda()
-        target_pos = target_pos.cuda()
-        target_hd = target_hd.cuda()
-        initial_conds = tuple(map(to_cuda, initial_conds))
+    init_pos = init_pos.to(device)
+    init_hd = init_hd.to(device)
+    inputs = inputs.to(device)
+    target_pos = target_pos.to(device)
+    target_hd = target_hd.to(device)
+    initial_conds = tuple(map(lambda x: x.to(device), initial_conds))
 
     if coder:
         inputs = coder(inputs, value=torch.Tensor([0.0, 1.0, 0.0]))
@@ -169,13 +111,9 @@ def encode_inputs(
     )
 
 
-def decode_outputs(outs, ensembles_targets, cuda=True, coder=None):
-    if cuda:
-        pc_targets = ensembles_targets[0].cuda()
-        hd_targets = ensembles_targets[1].cuda()
-    else:
-        pc_targets = ensembles_targets[0]
-        hd_targets = ensembles_targets[1]
+def decode_outputs(outs, ensembles_targets, coder=None):
+    pc_targets = ensembles_targets[0].to(device)
+    hd_targets = ensembles_targets[1].to(device)
 
     logits_hd, logits_pc, bottleneck_acts, lstm_states, _ = outs
     pc_targets, hd_targets = (pc_targets.transpose(1, 0), hd_targets.transpose(1, 0))
@@ -198,7 +136,6 @@ def decode_outputs(outs, ensembles_targets, cuda=True, coder=None):
 def get_loss(logits_pc, logits_hd, pc_targets, hd_targets, bottleneck_acts):
     pc_loss = cross_entropy(logits_pc, pc_targets)
     hd_loss = cross_entropy(logits_hd, hd_targets)
-
     return torch.mean(pc_loss + hd_loss)
 
 
@@ -206,7 +143,7 @@ coder = PadCoder(3)
 
 
 if __name__ == "__main__":
-    torch.save(target_ensembles,  SAVE_LOC + "target_ensembles.pt")
+    torch.save(target_ensembles, SAVE_LOC + "target_ensembles.pt")
     torch.save(model.state_dict(), SAVE_LOC + "model_epoch_0.pt")
 
     for e in tqdm(range(start_epoch, N_EPOCHS)):
@@ -215,37 +152,18 @@ if __name__ == "__main__":
         step = 0
         losses = []
         for X, y in data_generator:
-
             optimiser.zero_grad()
-
-            (
-                init_pos,
-                init_hd,
-                inputs,
-                target_pos,
-                target_hd,
-                initial_conds,
-                ensembles_targets,
-            ) = encode_inputs(
+            (init_pos, init_hd, inputs, target_pos, target_hd, initial_conds, ensembles_targets,) = encode_inputs(
                 X, y, place_cell_ensembles, head_direction_ensembles, coder=coder
             )
-
             outs = model.forward(inputs, initial_conds)
-
-            (
-                bottleneck_acts,
-                logits_pc,
-                logits_hd,
-                pc_targets,
-                hd_targets,
-            ) = decode_outputs(outs, ensembles_targets, coder=coder)
-            loss = get_loss(
-                logits_pc, logits_hd, pc_targets, hd_targets, bottleneck_acts
+            (bottleneck_acts, logits_pc, logits_hd, pc_targets, hd_targets,) = decode_outputs(
+                outs, ensembles_targets, coder=coder
             )
-
+            loss = get_loss(logits_pc, logits_hd, pc_targets, hd_targets, bottleneck_acts)
             loss += model.l2_loss * WEIGHT_DECAY
             loss.backward()
-            torch.nn.utils.clip_grad_value_(params, GRAD_CLIPPING)
+            torch.nn.utils.clip_grad_value_(model.parameters(), GRAD_CLIPPING)
             optimiser.step()
             losses.append(loss.clone().item())
             if step > STEPS_PER_EPOCH:
@@ -272,27 +190,15 @@ if __name__ == "__main__":
                         target_hd,
                         initial_conds,
                         ensembles_targets,
-                    ) = encode_inputs(
-                        test_X,
-                        test_y,
-                        place_cell_ensembles,
-                        head_direction_ensembles,
-                        coder=coder,
-                    )
+                    ) = encode_inputs(test_X, test_y, place_cell_ensembles, head_direction_ensembles, coder=coder,)
 
                     outs = model.forward(inputs, initial_conds)
 
-                    (
-                        bottleneck_acts,
-                        logits_pc,
-                        logits_hd,
-                        pc_targets,
-                        hd_targets,
-                    ) = decode_outputs(outs, ensembles_targets, coder=coder)
-
-                    loss = get_loss(
-                        logits_pc, logits_hd, pc_targets, hd_targets, bottleneck_acts
+                    (bottleneck_acts, logits_pc, logits_hd, pc_targets, hd_targets,) = decode_outputs(
+                        outs, ensembles_targets, coder=coder
                     )
+
+                    loss = get_loss(logits_pc, logits_hd, pc_targets, hd_targets, bottleneck_acts)
 
                     print("LOSS:", loss)
 

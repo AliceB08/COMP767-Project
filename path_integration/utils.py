@@ -40,7 +40,7 @@ np.seterr(invalid="ignore")
 
 
 def get_place_cell_ensembles(
-    env_size, neurons_seed, targets_type, lstm_init_type, n_pc, pc_scale
+    env_size, neurons_seed, n_pc, targets_type="softmax", lstm_init_type="softmax", pc_scale=[0.01]
 ):
     """Create the ensembles for the Place cells."""
     place_cell_ensembles = [
@@ -59,7 +59,7 @@ def get_place_cell_ensembles(
 
 
 def get_head_direction_ensembles(
-    neurons_seed, targets_type, lstm_init_type, n_hdc, hdc_concentration
+    neurons_seed, n_hdc, targets_type="softmax", lstm_init_type="softmax", hdc_concentration=[20.0]
 ):
     """Create the ensembles for the Head direction cells."""
     head_direction_ensembles = [

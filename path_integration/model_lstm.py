@@ -39,7 +39,6 @@ class GridTorch(nn.Module):
     def __init__(
         self,
         target_ensembles,
-        input_size,
         init_conds_size=268,
         nh_lstm=128,
         nh_bottleneck=256,

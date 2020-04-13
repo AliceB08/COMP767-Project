@@ -47,18 +47,12 @@ if __name__ == "__main__":
     place_cell_ensembles = utils.get_place_cell_ensembles(
         env_size=ENV_SIZE,
         neurons_seed=SEED,
-        targets_type="softmax",
-        lstm_init_type="softmax",
-        n_pc=N_PC,
-        pc_scale=[0.01],
+        n_pc=N_PC
     )
 
     head_direction_ensembles = utils.get_head_direction_ensembles(
         neurons_seed=SEED,
-        targets_type="softmax",
-        lstm_init_type="softmax",
         n_hdc=N_HDC,
-        hdc_concentration=[20.0],
     )
 
     ensembles = place_cell_ensembles + head_direction_ensembles
