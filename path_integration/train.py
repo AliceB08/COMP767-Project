@@ -12,7 +12,7 @@ import utils
 from misc.rate_coding import PadCoder
 
 ENV_SIZE = 2.2
-N_EPOCHS = 2 #1000
+N_EPOCHS = 10  # 1000
 STEPS_PER_EPOCH = 100
 BATCH_SIZE = 128
 GRAD_CLIPPING = 1e-5
@@ -23,7 +23,7 @@ WEIGHT_DECAY = 1e-5
 LR = 1e-5
 MOMENTUM = 0.9
 SAVE_LOC = "./experiments/"
-USE_PREVIOUSLY_TRAINED_MODEL = True
+USE_PREVIOUSLY_TRAINED_MODEL = False
 
 SEED = 9101
 torch.manual_seed(SEED)
@@ -37,8 +37,8 @@ print("USING DEVICE:", device)
 data_params = {
     "batch_size": BATCH_SIZE,
     "shuffle": True,
-    "num_workers": 1,  # num cpus,
-    # "num_workers": 6,  # num cpus,
+    # "num_workers": 1,  # num cpus,
+    "num_workers": 6,  # num cpus,
 }
 
 test_params = {
@@ -139,8 +139,8 @@ def get_loss(logits_pc, logits_hd, pc_targets, hd_targets, bottleneck_acts):
     return torch.mean(pc_loss + hd_loss)
 
 
-coder = PadCoder(3)
-
+# coder = PadCoder(3)
+coder = None
 
 if __name__ == "__main__":
     torch.save(target_ensembles, SAVE_LOC + "target_ensembles.pt")
@@ -168,9 +168,8 @@ if __name__ == "__main__":
             losses.append(loss.clone().item())
             if step > STEPS_PER_EPOCH:
                 break
-
             step += 1
-        print("EPOCH", e, "LOSS :", torch.mean(torch.Tensor(losses)))
+        print(f"EPOCH {e} LOSS : {torch.mean(torch.Tensor(losses))}")
         # evaluation routine
         if e % 10 == 0 and e > 0:
             state_dict = model.state_dict()
