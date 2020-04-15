@@ -20,10 +20,6 @@ def init_trunc_normal(t, size):
     std = 1. / np.sqrt(size)
     return truncated_normal_(t, 0, std)
 
-def rearrange_tf_weights(weights):
-    i, j, f, o = weights.chunk(4, 0)
-    return torch.cat((i, f, j, o))
-
 def load_tf_param(loc):
     return nn.Parameter(torch.Tensor(np.load(loc).T))
 

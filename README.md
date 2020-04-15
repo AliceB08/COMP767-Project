@@ -37,4 +37,4 @@ drive.mount('/content/drive')
 
 ## Folders
 
-The `path_integration` folder contains the Pytorch implementation of the paper. The repository can be found here: https://github.com/LPompe/gridtorch. The original repo from the paper (TensorFlow implementation) can be found here: https://github.com/deepmind/grid-cells.
+The `path_integration` folder contains the Pytorch implementation of the paper of the supervised training for the Grid Cell network. The original repo from the paper (TensorFlow implementation) can be found here: https://github.com/deepmind/grid-cells. A repository with a PyTorch adaptation can be found here: https://github.com/LPompe/gridtorch.
