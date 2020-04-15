@@ -204,7 +204,7 @@ if __name__ == "__main__":
             step += 1
         print(f"EPOCH {e} LOSS : {torch.mean(torch.Tensor(losses))}")
         # evaluation routine
-        if e % 10 == 0 and e > 0:
+        if (e+1)%2==0:
             state_dict = model.state_dict()
             for k, v in state_dict.items():
                 state_dict[k] = v.cpu()
