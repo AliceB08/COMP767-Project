@@ -63,6 +63,7 @@ argsdict = args.__dict__
 use_cuda = torch.cuda.is_available()
 device = torch.device("cuda:0" if use_cuda else "cpu")
 print("USING DEVICE:", device)
+print("DEVICE PROPERTIES:", torch.cuda.get_device_properties(0))
 
 # Parameters
 data_params = {
@@ -71,7 +72,7 @@ data_params = {
     # "num_workers": 1,  # num cpus,
     "num_workers": 6,  # num cpus,
 }
-
+torch.cuda.get_device_name
 test_params = {
     "batch_size": 100,
     "shuffle": True,
