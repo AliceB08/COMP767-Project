@@ -223,6 +223,7 @@ def get_scores_and_plot(
         with PdfPages(os.path.join(directory, filename), "w") as f:
             plt.savefig(f, format="pdf")
         plt.close(fig)
+        print(f"Saved file: {filename}")
     return (
         np.asarray(score_60),
         np.asarray(score_90),
