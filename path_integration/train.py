@@ -55,6 +55,7 @@ parser.add_argument('--save_dir', type=str, default='./experiments/results/',
 
 parser.add_argument('--use_saved_model', type=bool, default=False, help='Use previously trained model')
 parser.add_argument('--seed', type=int, default=9999, help='random seed')
+parser.add_argument('--save_model_freq', type=int, default=10, help='Save model every X epochs')
 
 
 args = parser.parse_args()
@@ -62,8 +63,6 @@ argsdict = args.__dict__
 
 use_cuda = torch.cuda.is_available()
 device = torch.device("cuda:0" if use_cuda else "cpu")
-print("USING DEVICE:", device)
-print("DEVICE PROPERTIES:", torch.cuda.get_device_properties(0))
 
 # Parameters
 data_params = {
@@ -177,6 +176,8 @@ def get_loss(logits_pc, logits_hd, pc_targets, hd_targets, bottleneck_acts):
 coder = None
 
 if __name__ == "__main__":
+    print("USING DEVICE:", device)
+    print("DEVICE PROPERTIES:", torch.cuda.get_device_properties(0))
     torch.save(target_ensembles, argsdict['save_dir'] + "target_ensembles.pt")
     torch.save(model.state_dict(), argsdict['save_dir'] + "model_epoch_0.pt")
 
@@ -203,9 +204,10 @@ if __name__ == "__main__":
             if step > argsdict['steps']:
                 break
             step += 1
-        print(f"EPOCH {e} LOSS : {torch.mean(torch.Tensor(losses))}")
+        print(f"EPOCH {e}")
+        print(f"training loss : {torch.mean(torch.Tensor(losses))}")
         # evaluation routine
-        if (e+1)%2==0:
+        if (e+1)%argsdict['save_model_freq']==0:
             state_dict = model.state_dict()
             for k, v in state_dict.items():
                 state_dict[k] = v.cpu()
@@ -233,6 +235,6 @@ if __name__ == "__main__":
 
                     loss = get_loss(logits_pc, logits_hd, pc_targets, hd_targets, bottleneck_acts)
 
-                    print("LOSS:", loss)
+                    print(f"evaluation loss: {torch.mean(loss).item()}")
 
                     break
