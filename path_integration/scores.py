@@ -116,12 +116,7 @@ class GridScorer(object):
         seq2 = np.nan_to_num(seq2)
 
         ones_seq1 = np.ones(seq1.shape)
-        ones_seq1[np.isnan(seq1)] = 0
         ones_seq2 = np.ones(seq2.shape)
-        ones_seq2[np.isnan(seq2)] = 0
-
-        seq1[np.isnan(seq1)] = 0
-        seq2[np.isnan(seq2)] = 0
 
         seq1_sq = np.square(seq1)
         seq2_sq = np.square(seq2)

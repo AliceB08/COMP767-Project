@@ -8,11 +8,11 @@ def get_latest_model_file(folder):
 
     returns None if no files were found in given location
     """
-    files = glob.glob(folder + 'model*.pt')
+    files = glob.glob(folder + 'model_epoch_*.pt')
 
     if files == []:
         return None
-    newest_file = max(files, key=os.path.getctime)
+    newest_file = max(files)
     return newest_file
 
 def get_model_epoch(file):
