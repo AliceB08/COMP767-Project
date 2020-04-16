@@ -10,6 +10,8 @@ from model_utils import get_latest_model_file, get_model_epoch
 from model_lstm import GridTorch
 from utils import *
 from misc.rate_coding import PadCoder
+import os
+import time
 
 # Arguments
 parser = argparse.ArgumentParser(description="PyTorch Grid Cells Path Integration")
@@ -18,8 +20,8 @@ parser.add_argument("--num_epochs", type=int, default=10, help="number of epochs
 parser.add_argument("--steps", type=int, default=100, help="steps per epoch")
 parser.add_argument("--batch_size", type=int, default=128, help="size of one minibatch")
 parser.add_argument("--grad_clip", type=float, default=1e-5, help="gradient clipping")
-parser.add_argument("--num_place_cells", type=int, default=256, help="number of epochs to stop after")
-parser.add_argument("--num_headD_cells", type=int, default=12, help="number of epochs to stop after")
+parser.add_argument("--num_place_cells", type=int, default=256, help="number of place cells")
+parser.add_argument("--num_headD_cells", type=int, default=12, help="number of head direction cells")
 parser.add_argument("--btln_dropout", type=float, default=0.5, help="bottleneck dropout")
 parser.add_argument("--weight_decay", type=float, default=1e-5, help="weight decay")
 parser.add_argument("--lr", type=float, default=1e-5, help="initial learning rate")
@@ -62,7 +64,7 @@ head_direction_ensembles = get_head_direction_ensembles(neurons_seed=argsdict["s
 target_ensembles = place_cell_ensembles + head_direction_ensembles
 
 # Create model and restore previous model if desired
-model = GridTorch(target_ensembles).to(device)
+model = GridTorch(target_ensembles=target_ensembles,  n_pcs=argsdict["num_place_cells"],  n_hdcs=argsdict["num_headD_cells"]).to(device)
 start_epoch = 0
 if argsdict["use_saved_model"]:
     saved_model_file = get_latest_model_file(argsdict["save_dir"])
@@ -88,13 +90,15 @@ optimiser = torch.optim.RMSprop(
 if __name__ == "__main__":
     print(argsdict)
     print("USING DEVICE:", device)
-    print("DEVICE PROPERTIES:", torch.cuda.get_device_properties(0))
+    #print("DEVICE PROPERTIES:", torch.cuda.get_device_properties(0))
     torch.save(target_ensembles, argsdict["save_dir"] + "target_ensembles.pt")
     torch.save(model.state_dict(), argsdict["save_dir"] + "model_epoch_0.pt")
     all_train_losses = []
     all_eval_losses = []
+    times = []
 
     for e in tqdm(range(start_epoch, argsdict["num_epochs"])):
+        t0 = time.time()
         # TRAIN MODEL
         model.train()
         step = 0
@@ -120,6 +124,7 @@ if __name__ == "__main__":
         print(f"EPOCH {e}")
         print(f"training loss : {torch.mean(torch.Tensor(losses))}")
         all_train_losses.append((e, torch.mean(torch.Tensor(losses)).item()))
+        times.append(time.time() - t0)
         # EVALUATE MODEL
         if (e + 1) % argsdict["save_model_freq"] == 0:
             torch.save(model.state_dict(), argsdict["save_dir"] + "model_epoch_{}.pt".format(e))
@@ -137,6 +142,14 @@ if __name__ == "__main__":
                     loss = get_loss(logits_pc, logits_hd, pc_targets, hd_targets, bottleneck_acts)
                     print(f"evaluation loss: {torch.mean(loss).item()}")
                     all_eval_losses.append((e, torch.mean(loss).item()))
+                    times.append(time.time() - t0)
                     break
     print("TRAINING LOSSES:", all_train_losses)
     print("EVALUATION LOSSES:", all_eval_losses)
+
+    # SAVE LOSS VALUES
+    lc_path = os.path.join(argsdict["save_dir"], 'learning_info.npy')
+    print('\nDONE\n\nSaving learning info to ' + lc_path)
+    np.save(lc_path, {'train_losses': all_train_losses,
+                      'val_losses': all_eval_losses,
+                      'times': times})
