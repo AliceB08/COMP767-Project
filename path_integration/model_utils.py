@@ -9,8 +9,8 @@ def get_latest_model_file(folder):
     returns None if no files were found in given location
     """
     files = glob.glob(folder + 'model_epoch_*.pt')
-
     if files == []:
+        print("No files found.")
         return None
     newest_file = max(files)
     return newest_file
