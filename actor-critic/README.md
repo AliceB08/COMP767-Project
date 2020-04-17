@@ -6,6 +6,7 @@
 Describes the environment:
 * A circular environment defined pool_radius, platform_radius, platform_location and stepsize (velocity of mouse)
 * **momentum** makes the movements more realistic, similar to original rat movements thus restricting sudden change of directions
+* The RMW (Reference Memory) and DMP (Delayed matching-to-place) task classes specify the repsective change in goal locations (RMW --> after 70% days of training, DMP --> everyday)
 
 Important considerations:
 * Set the **env.t=0** while reseting the environment.
