@@ -150,6 +150,12 @@ if __name__ == "__main__":
     # SAVE LOSS VALUES
     lc_path = os.path.join(argsdict["save_dir"], 'learning_info.npy')
     print('\nDONE\n\nSaving learning info to ' + lc_path)
-    np.save(lc_path, {'train_losses': all_train_losses,
-                      'val_losses': all_eval_losses,
-                      'times': times})
+    # np.save(lc_path, {'train_losses': all_train_losses,
+    #                   'val_losses': all_eval_losses,
+    #                   'times': times})
+
+    # lc_path = os.path.join(save_dir , 'learning_info.npy')
+    with open(lc_path, 'wb') as f: 
+      np.save(f, all_train_losses)
+      np.save(f, all_eval_losses)
+      np.save(f, times)
