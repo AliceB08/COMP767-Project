@@ -6,7 +6,7 @@ import math
 from matplotlib.patches import Circle
 import mpl_toolkits.mplot3d.art3d as art3d
 from tqdm import tqdm
-from watermaze import watermaze
+from watermaze import watermaze, RWMTask, DMPTask
 
 ## Maybe add a FeatureEncoding super class for which PlaceCellEncoding, GridCellEncoding, TileCoding etc. can be subclasses
 

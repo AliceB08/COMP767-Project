@@ -6,7 +6,7 @@ import math
 from matplotlib.patches import Circle
 import mpl_toolkits.mplot3d.art3d as art3d
 from tqdm import tqdm
-from watermaze import watermaze
+from watermaze import watermaze, RWMTask, DMPTask
 from placeCellEncoding import PlaceCellEncoding
 
 class ActorCritic():
@@ -159,13 +159,14 @@ class ActorCritic():
         plt.title('Action with max value')
         plt.show(block=False)
     
-    def TD_lambda(self,alpha,lamda=0,episodes=10,verbose=False):
+    def TD_lambda(self,alpha,lamda=0,day=1,episodes=10,verbose=False):
         '''
         Implements a TD-lambda algorithm for training the actor and critic networks. 
         Uses a linear actor and critic models
         '''
         time_taken = np.zeros((episodes,))
-        for e in tqdm(range(episodes)):
+        self.env.update_platform_location(day)
+        for e in range(episodes):
             # reset the env
             self.env.startposition()
             self.env.t = 0
@@ -222,20 +223,33 @@ class ActorCritic():
                 
 if __name__=='__main__':
     np.random.seed(10)
-    maze = watermaze(T=60)
-    maze.startposition()
-    AC = ActorCritic(env=maze,numCells=493,gamma=1)
-    # time_arr = AC.TD_lambda(alpha=0.01,lamda=0.0,episodes=20,verbose=True)
-    days = 10
+    days = 6
+    sessions = 3
     episodes = 500
+    # maze = watermaze(T=60)
+    # maze = RWMTask(T=60,days=days)
+    maze = DMPTask(T=60,days=days)
+    maze.startposition()
+    AC = ActorCritic(env=maze,numCells=493,gamma=0.9)
+    # time_arr = AC.TD_lambda(alpha=0.01,lamda=0.0,episodes=20,verbose=True)
     time_mean = []
     time_std = []
-    for d in range(days):
-        time_arr = AC.TD_lambda(alpha=0.00015,lamda=0.8,episodes=episodes)
-        print(time_arr.mean(),time_arr.std())
+    for d in tqdm(range(1,1+days*sessions)):
+        time_arr = AC.TD_lambda(alpha=0.001,lamda=0.,day=1+(d-1)//sessions,episodes=episodes)
+        tqdm.write("{} {}".format(time_arr.mean(),time_arr.std()))
         time_mean.append(time_arr.mean())
         time_std.append(time_arr.std()/np.sqrt(len(time_arr)))
-    plt.errorbar(np.linspace(1,days,days),time_mean,time_std)
+    # plt.errorbar(np.linspace(1,days*sessions,days*sessions),time_mean,time_std)
+    ## Plotting similar to paper figure
+    tick_arr = []
+    tick_label_arr = []
+    for d in range(days):
+        plt.errorbar(np.linspace(d+d*sessions+1,d+(d+1)*sessions,sessions),time_mean[d*sessions:(d+1)*sessions],time_std[d*sessions:(d+1)*sessions],color='k')
+        tick_arr.extend(np.linspace(d+d*sessions+1,d+(d+1)*sessions,sessions))
+        label_arr = ['']*sessions
+        label_arr[sessions//2] = str(d+1)
+        tick_label_arr.extend(label_arr)
+    plt.xticks(tick_arr,tick_label_arr)
     plt.ylabel('Steps')
     plt.xlabel('Days')
     plt.show()

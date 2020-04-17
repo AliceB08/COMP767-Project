@@ -259,3 +259,49 @@ class watermaze(object):
         """
         
         return np.sqrt(np.sum((self.position[:,self.t] - self.platform_location)**2)) <= (self.platform_radius + 1)
+
+class RWMTask(watermaze):
+    def __init__(self,pool_radius=60, platform_radius=10, platform_location=np.array([25,25]), 
+        stepsize=5.0, momentum=0.2, T=60,days=10,alternate_platform_location=None):
+        watermaze.__init__(self,pool_radius=pool_radius, platform_radius=platform_radius, platform_location=platform_location, 
+            stepsize=stepsize, momentum=momentum, T=T)
+        assert not (self.platform_location==0).all(), "Platform at the center!"
+        self.days = days
+        self.alternate_platform_location = alternate_platform_location
+        self.platform_swtiched = False
+
+    def update_platform_location(self,day):
+        if day>0.7*self.days and not self.platform_swtiched:
+            if self.alternate_platform_location is None or (self.alternate_platform_location==self.platform_location).all():
+                self.alternate_platform_location = - self.platform_location
+            self.platform_location = self.alternate_platform_location
+            self.platform_swtiched = True
+
+class DMPTask(watermaze):
+    def __init__(self,pool_radius=60, platform_radius=10, platform_location=np.array([25,25]), 
+        stepsize=5.0, momentum=0.2, T=60,days=10,alternate_platform_location_seq=None):
+        watermaze.__init__(self,pool_radius=pool_radius, platform_radius=platform_radius, platform_location=platform_location, 
+            stepsize=stepsize, momentum=momentum, T=T)
+        assert not (self.platform_location==0).all(), "Platform at the center!"
+        if alternate_platform_location_seq is not None:
+            assert len(alternate_platform_location_seq)==days-1, "Alternate platform location sequences length {} doesn't match remaining days {}".format(
+                len(alternate_platform_location_seq),days-1)
+        self.days = days
+        self.original_platform_location = self.platform_location
+        self.alternate_platform_location_seq = alternate_platform_location_seq
+        if alternate_platform_location_seq is None:
+            self.rot_angle_seq = np.random.permutation(np.linspace(1,days-1,days-1))*2*np.pi/self.days
+        self.platform_swtiched = np.zeros((self.days,))
+
+    def update_platform_location(self,day):
+        if day==1 or self.platform_swtiched[day-1]:
+            return
+        if self.alternate_platform_location_seq is not None:
+            self.platform_location = self.alternate_platform_location_seq[day-2]
+        else:
+            angle = self.rot_angle_seq[day-2]
+            new_location = np.array([int(np.cos(angle)*self.original_platform_location[0]-np.sin(angle)*self.original_platform_location[1])
+                ,int(np.sin(angle)*self.original_platform_location[0]+np.cos(angle)*self.original_platform_location[1])]) 
+            self.platform_location = new_location
+        self.platform_swtiched[day-1] = True
+        # print(self.platform_location)
