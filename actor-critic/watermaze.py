@@ -22,7 +22,7 @@ class watermaze(object):
     
     ####################################################################
     # the initialization function, measurements are in cm
-    def __init__(self, pool_radius=60, platform_radius=10, platform_location=np.array([[25],[25]]), 
+    def __init__(self, pool_radius=60, platform_radius=10, platform_location=np.array([25,25]), 
                  stepsize=5.0, momentum=0.2, T=60):
         
         """
