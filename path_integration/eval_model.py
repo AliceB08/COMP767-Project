@@ -21,23 +21,20 @@ SEED = 9999
 N_PC = [256]
 N_HDC = [12]
 data_params = {"batch_size": BATCH_SIZE, "shuffle": False, "num_workers": 8}
-EXPERIMENT = "2020-04-15_14-40"
-EPOCH = get_model_epoch(get_latest_model_file(f"./experiments/results/{EXPERIMENT}/"))
-# EPOCH = 239
 
 
-def get_file_name():
-    # Alternative 1
+def get_file_name(exp, epoch_nb):
     is_file, copy_number = True, 0
     while is_file:
-        filename = f"{EXPERIMENT}_epoch{EPOCH}_{copy_number}.pdf"
+        filename = f"{exp}_epoch{epoch_nb}_{copy_number}.pdf"
         paths = glob.glob(f"./ratemaps/{filename}")
         is_file = len(paths) != 0
         copy_number += 1
     return filename
 
-
-if __name__ == "__main__":
+def create_rate_maps(exp, epoch_nb=None):
+    if epoch_nb==None:
+        epoch_nb = get_model_epoch(get_latest_model_file(f"./experiments/results/{exp}/"))
     # Loading datasets
     dataset = Dataset(batch_size=data_params["batch_size"])
     data_generator = data.DataLoader(dataset, **data_params)
@@ -47,14 +44,14 @@ if __name__ == "__main__":
     head_direction_ensembles = get_head_direction_ensembles(neurons_seed=SEED, n_hdc=N_HDC,)
     target_ensembles = place_cell_ensembles + head_direction_ensembles
 
-    tmp = torch.load(f"./experiments/results/{EXPERIMENT}/target_ensembles.pt")
+    tmp = torch.load(f"./experiments/results/{exp}/target_ensembles.pt")
     place_cell_ensembles[0].means = torch.Tensor(tmp[0].means)
     place_cell_ensembles[0].variances = torch.Tensor(tmp[0].variances)
     head_direction_ensembles[0].means = torch.Tensor(tmp[1].means)
     head_direction_ensembles[0].kappa = torch.Tensor(tmp[1].kappa)
 
     model = GridTorch(target_ensembles)
-    model.load_state_dict(torch.load(f"./experiments/results/{EXPERIMENT}/model_epoch_{EPOCH}.pt"))
+    model.load_state_dict(torch.load(f"./experiments/results/{exp}/model_epoch_{epoch_nb}.pt"))
     model.eval()
 
     for X, y in data_generator:
@@ -76,4 +73,10 @@ if __name__ == "__main__":
     masks_parameters = zip(starts, ends.tolist())
     scorer = GridScorer(20, ((-1.1, 1.1), (-1.1, 1.1)), masks_parameters)
 
-    scoress = get_scores_and_plot(scorer, pos_xy, acts, "./ratemaps/", get_file_name())
+    scoress = get_scores_and_plot(scorer, pos_xy, acts, "./ratemaps/", get_file_name(exp, epoch_nb))
+
+
+if __name__ == "__main__":
+    EXPERIMENTS = ["2020-04-15_14-40", "2020-04-15_15-25", "2020-04-15_16-21"]
+    for i in [1,2]:
+        create_rate_maps(EXPERIMENTS[i])
