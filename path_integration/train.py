@@ -90,7 +90,7 @@ optimiser = torch.optim.RMSprop(
 if __name__ == "__main__":
     print(argsdict)
     print("USING DEVICE:", device)
-    #print("DEVICE PROPERTIES:", torch.cuda.get_device_properties(0))
+    print("DEVICE PROPERTIES:", torch.cuda.get_device_properties(0))
     torch.save(target_ensembles, argsdict["save_dir"] + "target_ensembles.pt")
     torch.save(model.state_dict(), argsdict["save_dir"] + "model_epoch_0.pt")
     all_train_losses = []
