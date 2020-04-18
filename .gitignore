@@ -11,4 +11,5 @@ tensorflow_implementation/*
 path_integration/experiments/*
 **/*.pdf
 **/slurm*.out
+**/.DS_Store
 .idea/*
