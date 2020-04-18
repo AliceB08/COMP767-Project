@@ -5,7 +5,7 @@ from matplotlib import cm
 import math
 from matplotlib.patches import Circle
 import mpl_toolkits.mplot3d.art3d as art3d
-from tqdm.notebook import tqdm
+from tqdm import tqdm
 ####################################################################################################
 # watermaze module
 ####################################################################################################
@@ -88,24 +88,38 @@ class watermaze(object):
 
         # determine the vector of direction of movement
         angle = self.direction[A]
-        newdirection = np.array([np.cos(angle), np.sin(angle)])
-        
+        self.newdirection = np.array([np.cos(angle), np.sin(angle)])
+
         # add in momentum to reflect actual swimming dynamics (and normalize, then multiply by stepsize)
-        direction = (1.0 - self.momentum)*newdirection + self.momentum*self.prevdir
+        direction = (1.0 - self.momentum)*self.newdirection + self.momentum*self.prevdir
         direction = direction/np.sqrt((direction**2).sum())
         direction = direction*self.stepsize
         
         # update the position, prevent the rat from actually leaving the water-maze by having it "bounce" off the wall 
-        [newposition, direction] = self.poolreflect(self.position[:,self.t] + direction)
+        [newposition, direction] = self.poolreflect(self.position[:, self.t] + direction)
 
         # if we're now at the very edge of the pool, move us in a little-bit
         if (np.linalg.norm(newposition) == self.radius):
-            newposition = np.multiply(np.divide(newposition,np.linalg.norm(newposition)),(self.radius - 1))
+            newposition = np.multiply(np.divide(newposition, np.linalg.norm(newposition)), (self.radius - 1))
+
+        self.angular_velocity = np.sum((self.newdirection - self.prevdir)**2)
+        self.velocity = np.sum((newposition-self.position[:, self.t])**2)
 
         # update the position, time (and previous direction)
-        self.position[:,self.t+1] = newposition
+        self.position[:, self.t+1] = newposition
         self.t                    = self.t + 1
         self.prevdir              = direction
+
+
+    def get_trajectory(self):
+        trajectory = {}
+        trajectory["init_pos"] = self.position[:, 0]
+        trajectory["init_hd"] = self.prevdir
+        trajectory["ego_vel"] = [self.velocity, math.sin(self.angular_velocity), math.cos(self.angular_velocity)]
+        trajectory["target_pos"] = self.position[:, self.t - 1]
+        trajectory["target_hd"] = self.newdirection
+
+        return trajectory
         
     ####################################################################
     # for bouncing the rat off the wall of the pool
@@ -305,3 +319,4 @@ class DMPTask(watermaze):
             self.platform_location = new_location
         self.platform_swtiched[day-1] = True
         # print(self.platform_location)
+
