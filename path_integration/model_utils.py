@@ -12,7 +12,7 @@ def get_latest_model_file(folder):
     if files == []:
         print("No files found.")
         return None
-    newest_file = max(files)
+    newest_file = max(files, key=get_model_epoch)
     return newest_file
 
 def get_model_epoch(file):

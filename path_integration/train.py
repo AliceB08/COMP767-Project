@@ -33,7 +33,8 @@ parser.add_argument(
     default="./experiments/results/",
     help="path to save the experimental config, logs, model. This is not automatically generated.",
 )
-parser.add_argument("--use_saved_model", type=bool, default=False, help="Use previously trained model")
+parser.add_argument("--use_saved_model_dir", type=str, default="", help="Directory of the previously trained model")
+parser.add_argument("--disable_LSTM_training", action='store_true', help="Disable LSTM training")
 parser.add_argument("--seed", type=int, default=9999, help="random seed")
 parser.add_argument("--save_model_freq", type=int, default=10, help="Save model every X epochs")
 args = parser.parse_args()
@@ -64,10 +65,15 @@ head_direction_ensembles = get_head_direction_ensembles(neurons_seed=argsdict["s
 target_ensembles = place_cell_ensembles + head_direction_ensembles
 
 # Create model and restore previous model if desired
-model = GridTorch(target_ensembles=target_ensembles,  n_pcs=argsdict["num_place_cells"],  n_hdcs=argsdict["num_headD_cells"]).to(device)
+model = GridTorch(
+    target_ensembles=target_ensembles,
+    n_pcs=argsdict["num_place_cells"],
+    n_hdcs=argsdict["num_headD_cells"],
+    disable_LSTM_training=argsdict["disable_LSTM_training"],
+).to(device)
 start_epoch = 0
-if argsdict["use_saved_model"]:
-    saved_model_file = get_latest_model_file(argsdict["save_dir"])
+if len(argsdict["use_saved_model_dir"])!=0:
+    saved_model_file = get_latest_model_file(argsdict["use_saved_model_dir"])
     model.load_state_dict(torch.load(saved_model_file))
     model.to(device)
     start_epoch = get_model_epoch(saved_model_file)
@@ -97,7 +103,7 @@ if __name__ == "__main__":
     all_eval_losses = []
     times = []
 
-    for e in tqdm(range(start_epoch, argsdict["num_epochs"])):
+    for e in tqdm(range(start_epoch, argsdict["num_epochs"]+start_epoch)):
         t0 = time.time()
         # TRAIN MODEL
         model.train()
@@ -148,14 +154,9 @@ if __name__ == "__main__":
     print("EVALUATION LOSSES:", all_eval_losses)
 
     # SAVE LOSS VALUES
-    lc_path = os.path.join(argsdict["save_dir"], 'learning_info.npy')
-    print('\nDONE\n\nSaving learning info to ' + lc_path)
-    # np.save(lc_path, {'train_losses': all_train_losses,
-    #                   'val_losses': all_eval_losses,
-    #                   'times': times})
-
-    # lc_path = os.path.join(save_dir , 'learning_info.npy')
-    with open(lc_path, 'wb') as f: 
-      np.save(f, all_train_losses)
-      np.save(f, all_eval_losses)
-      np.save(f, times)
+    lc_path = os.path.join(argsdict["save_dir"], "learning_info.npy")
+    print("\nDONE\n\nSaving learning info to " + lc_path)
+    with open(lc_path, "wb") as f:
+        np.save(f, all_train_losses)
+        np.save(f, all_eval_losses)
+        np.save(f, times)

@@ -33,9 +33,11 @@ class GridTorch(nn.Module):
         n_hdcs=12,  # number of head direction cells
         dropoutrates_bottleneck=0.5,  # Dropout rate at bottleneck
         bottleneck_has_bias=False,
+        disable_LSTM_training=False, # Use pretrained LSTM
     ):
         super().__init__()
         self.target_ensembles = target_ensembles
+        self.disable_LSTM_training = disable_LSTM_training
         # Weights to compute the initial cell and hidden state of the LSTM
         self.state_embed = nn.Linear(n_pcs + n_hdcs, nh_lstm)  # weight W^cp and W^cd
         self.cell_embed = nn.Linear(n_pcs + n_hdcs, nh_lstm)  # weight W^hp and W^hd
@@ -83,6 +85,8 @@ class GridTorch(nn.Module):
             # get lstm output predictions
             _, (h_t, c_t) = self.lstm(t.view(1, batch_size, -1), (h_t.unsqueeze(0), c_t.unsqueeze(0)))
             h_t, c_t = h_t.squeeze(), c_t.squeeze()
+            if self.disable_LSTM_training:
+                h_t, c_t = h_t.detach(), c_t.detach()
             # The ratemaps take the weights of the battleneck activation (without the dropout)
             bottleneck_activations = self.dropout(self.bottleneck(h_t))
 
