@@ -143,7 +143,8 @@ class ActorCritic():
 
         locs = self.featureCode.pos
         action_values = np.array([np.argmax(self.get_actor_output(self.getFeatureEncoding(l))) for l in locs])
-        ActionPlot = plt.scatter(locs[:,0],locs[:,1],s=self.featureCode.sigma,c=action_values)
+        list_actions = np.array(list(self.env.direction.values()))
+        ActionPlot = plt.quiver(locs[:,0],locs[:,1],5*np.cos(np.take(list_actions,action_values)),5*np.sin(np.take(list_actions,action_values)))
         ax.add_artist(ActionPlot)
         # turn on the grid
         plt.grid(True)
@@ -155,8 +156,7 @@ class ActorCritic():
         plt.yticks(np.arange(-self.env.radius, self.env.radius+20, step=20))
         ax.set_xlabel('X Position (cm)')
         ax.set_ylabel('Y Position (cm)')
-        plt.colorbar()
-        plt.title('Action with max value')
+        plt.title('Preferred Action')
         plt.show(block=False)
     
     def TD_lambda(self,alpha,lamda=0,day=1,episodes=10,verbose=False):
@@ -193,7 +193,7 @@ class ActorCritic():
                 else:
                     reward = 0
                     TD_error = self.gamma*self.get_critic_output(next_loc_encoding) - self.get_critic_output(curr_loc_encoding)
-                self.criticWeights += alpha*TD_error*eligibility_trace      # update critic weights
+                self.criticWeights += 0.3*alpha*TD_error*eligibility_trace      # update critic weights
                 self.actorWeights[:,A] += (alpha*TD_error*eligibility_trace).reshape(-1)      # update actor weights
                 # check for Nans while debugging
                 if np.isnan(self.criticWeights).any():
@@ -227,15 +227,15 @@ if __name__=='__main__':
     sessions = 3
     episodes = 500
     # maze = watermaze(T=60)
-    # maze = RWMTask(T=60,days=days)
-    maze = DMPTask(T=60,days=days)
+    maze = RWMTask(T=60,days=days)
+    # maze = DMPTask(T=60,days=days)
     maze.startposition()
     AC = ActorCritic(env=maze,numCells=493,gamma=0.9)
     # time_arr = AC.TD_lambda(alpha=0.01,lamda=0.0,episodes=20,verbose=True)
     time_mean = []
     time_std = []
     for d in tqdm(range(1,1+days*sessions)):
-        time_arr = AC.TD_lambda(alpha=0.001,lamda=0.,day=1+(d-1)//sessions,episodes=episodes)
+        time_arr = AC.TD_lambda(alpha=0.003,lamda=0.,day=1+(d-1)//sessions,episodes=episodes)
         tqdm.write("{} {}".format(time_arr.mean(),time_arr.std()))
         time_mean.append(time_arr.mean())
         time_std.append(time_arr.std()/np.sqrt(len(time_arr)))
