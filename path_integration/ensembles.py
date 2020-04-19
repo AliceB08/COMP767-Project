@@ -75,13 +75,13 @@ class CellEnsemble(object):
             else:
                 self.soft_init = soft_init
 
-    def get_targets(self, x):
+    def get_targets(self, x, radial):
         """Type of target."""
 
         if self.soft_targets == "normalized":
             targets = torch.exp(self.unnor_logpdf(x))
         elif self.soft_targets == "softmax":
-            lp = self.log_posterior(x)
+            lp = self.log_posterior(x, radial)
             targets = softmax(lp)
         elif self.soft_targets == "sample":
             lp = self.log_posterior(x)
@@ -91,13 +91,13 @@ class CellEnsemble(object):
             targets = one_hot_max(lp)
         return targets
 
-    def get_init(self, x):
+    def get_init(self, x, radial):
         """Type of initialisation."""
 
         if self.soft_init == "normalized":
             init = torch.exp(self.unnor_logpdf(x))
         elif self.soft_init == "softmax":
-            lp = self.log_posterior(x)
+            lp = self.log_posterior(x, radial)
             init = softmax(lp)
         elif self.soft_init == "sample":
             lp = self.log_posterior(x)
@@ -122,8 +122,8 @@ class CellEnsemble(object):
             loss = crit(targets, predictions)
         return loss
 
-    def log_posterior(self, x):
-        logp = self.unnor_logpdf(x)
+    def log_posterior(self, x, radial):
+        logp = self.unnor_logpdf(x, radial)
         log_posteriors = logp - torch.logsumexp(logp, dim=2, keepdim=True)
         return log_posteriors
 
@@ -140,19 +140,33 @@ class PlaceCellEnsemble(CellEnsemble):
         seed=None,
         soft_targets=None,
         soft_init=None,
+        radial=False,
+        radius=60,
     ):
         super(PlaceCellEnsemble, self).__init__(n_cells, soft_targets, soft_init)
         # Create a random MoG with fixed cov over the position (Nx2)
         rs = torch.manual_seed(seed)
-        uni = torch.distributions.Uniform(pos_min, pos_max)
 
-        self.means = uni.sample((self.n_cells, 2))
+        if radial:
+            r = torch.distributions.Uniform(0, 1)
+            r = radius*r.sample((self.n_cells, 1))
+            theta = torch.distributions.Uniform(0, 1)
+            theta = 2*np.pi*theta.sample((self.n_cells, 1))
+            X = r * np.cos(theta)
+            Y = r * np.sin(theta)
+            self.means = torch.tensor(np.hstack((X, Y)))
+            print(self.means.size())
+        else:
+            dist = torch.distributions.Uniform(pos_min, pos_max)
+            self.means = dist.sample((self.n_cells, 2))
+
         self.variances = torch.ones_like(self.means) * stdev ** 2
 
-    def unnor_logpdf(self, trajs):
+    def unnor_logpdf(self, trajs, radial):
         # Output the probability of each component at each point (BxTxN)
         diff = trajs[:, :, None, :] - self.means[None, None, ...]
         unnor_logp = -0.5 * torch.sum((diff ** 2) / self.variances, dim=-1)
+
         return unnor_logp
 
 
@@ -160,16 +174,43 @@ class HeadDirectionCellEnsemble(CellEnsemble):
     """Calculates the dist over HD cells given an absolute angle."""
 
     def __init__(
-        self, n_cells, concentration=20, seed=None, soft_targets=None, soft_init=None
+        self, n_cells, concentration=20, seed=None, soft_targets=None, soft_init=None, radial=False, radius=60,
     ):
         super(HeadDirectionCellEnsemble, self).__init__(
             n_cells, soft_targets, soft_init
         )
-        # Create a random Von Mises with fixed cov over the position
-        rs = torch.manual_seed(seed)
-        uni = torch.distributions.Uniform(-np.pi, np.pi)
-        self.means = uni.sample((n_cells,))
-        self.kappa = torch.ones_like(self.means) * concentration
+        if not radial:
+            # Create a random Von Mises with fixed cov over the position
+            rs = torch.manual_seed(seed)
+            uni = torch.distributions.Uniform(-np.pi, np.pi)
+            self.means = uni.sample((n_cells,))
+            self.kappa = torch.ones_like(self.means) * concentration
+        else: #head direction cells for watermaze
+            self.direction = [
+                np.pi / 2,  # north
+                np.pi / 4,  # north-east
+                0,  # east
+                7 * np.pi / 4,  # south-east
+                3 * np.pi / 2,  # south
+                5 * np.pi / 4,  # south-west
+                np.pi,  # west
+                3 * np.pi / 4,  # north-west
+            ]
 
-    def unnor_logpdf(self, x):
-        return self.kappa * torch.cos(x - self.means[None, None, :])
+            #direction = headDirection * self.stepsize
+            #headDirections = []
+            headDirections = np.random.choice(self.direction, self.n_cells)
+            # for n in range(self.n_cells):
+            #     direction = np.array([np.cos(direction_list[n]), np.sin(direction_list[n])])
+            #     direction = direction/np.sqrt((direction**2).sum())
+            #     headDirections.append(direction)
+
+            groundtruth = torch.Tensor(headDirections)
+            self.means = groundtruth
+            #self.means = torch.tensor(np.concatenate((directionX[:, None], directionY[:, None]), axis=1))
+
+    def unnor_logpdf(self, x, radial):
+        if radial:
+            return x - self.means[None, None, :]
+        else:
+            return self.kappa * torch.cos(x - self.means[None, None, :])

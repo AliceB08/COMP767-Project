@@ -10,7 +10,7 @@ import pickle
 maze = watermaze()
 # set the starting location
 maze.startposition()
-num_episodes = 1000
+num_episodes = 10000
 trajectories = {}
 for e in range(num_episodes):
     index = 0

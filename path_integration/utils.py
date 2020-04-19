@@ -32,7 +32,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 
-from ensembles import PlaceCellEnsemble, HeadDirectionCellEnsemble
+from path_integration.ensembles import PlaceCellEnsemble, HeadDirectionCellEnsemble
 
 xrange = range
 
@@ -40,43 +40,65 @@ np.seterr(invalid="ignore")
 
 
 def get_place_cell_ensembles(
-    env_size, neurons_seed, n_pc, targets_type="softmax", lstm_init_type="softmax", pc_scale=[0.01]
+    env_size, neurons_seed, n_pc, targets_type="softmax", lstm_init_type="softmax", pc_scale=[0.01], radial=False, radius=60
 ):
     """Create the ensembles for the Place cells."""
-    place_cell_ensembles = [
-        PlaceCellEnsemble(
-            n,
-            stdev=s,
-            pos_min=-env_size / 2.0,
-            pos_max=env_size / 2.0,
-            seed=neurons_seed,
-            soft_targets=targets_type,
-            soft_init=lstm_init_type,
-        )
-        for n, s in zip(n_pc, pc_scale)
-    ]
+    if not radial:
+        place_cell_ensembles = [
+            PlaceCellEnsemble(
+                n,
+                stdev=s,
+                pos_min=-env_size / 2.0,
+                pos_max=env_size / 2.0,
+                seed=neurons_seed,
+                soft_targets=targets_type,
+                soft_init=lstm_init_type,
+            )
+            for n, s in zip(n_pc, pc_scale)
+        ]
+    else:
+        place_cell_ensembles = [
+            PlaceCellEnsemble(
+                n,
+                stdev=s,
+                seed=neurons_seed,
+                soft_targets=targets_type,
+                soft_init=lstm_init_type,
+                radial=radial,
+                radius=radius,
+            )
+            for n, s in zip(n_pc, pc_scale)
+        ]
     return place_cell_ensembles
 
 
 def get_head_direction_ensembles(
-    neurons_seed, n_hdc, targets_type="softmax", lstm_init_type="softmax", hdc_concentration=[20.0]
+    neurons_seed, n_hdc, targets_type="softmax", lstm_init_type="softmax", hdc_concentration=[20.0], radial=False, radius=60
 ):
     """Create the ensembles for the Head direction cells."""
-    head_direction_ensembles = [
-        HeadDirectionCellEnsemble(
-            n, concentration=con, seed=neurons_seed, soft_targets=targets_type, soft_init=lstm_init_type,
-        )
-        for n, con in zip(n_hdc, hdc_concentration)
-    ]
+    if not radial:
+        head_direction_ensembles = [
+            HeadDirectionCellEnsemble(
+                n, concentration=con, seed=neurons_seed, soft_targets=targets_type, soft_init=lstm_init_type
+            )
+            for n, con in zip(n_hdc, hdc_concentration)
+        ]
+    else:
+        head_direction_ensembles = [
+            HeadDirectionCellEnsemble(
+                n, seed=neurons_seed, soft_targets=targets_type, soft_init=lstm_init_type, radial=radial,
+            )
+            for n in n_hdc
+        ]
     return head_direction_ensembles
 
 
-def encode_inputs(X, y, place_cell_ensembles, head_direction_ensembles, device, coder=None):
+def encode_inputs(X, y, place_cell_ensembles, head_direction_ensembles, device, radial=False, coder=None):
     init_pos, init_hd, inputs = X
     target_pos, target_hd = y
 
-    initial_conds = encode_initial_conditions(init_pos, init_hd, place_cell_ensembles, head_direction_ensembles)
-    ensembles_targets = encode_targets(target_pos, target_hd, place_cell_ensembles, head_direction_ensembles)
+    initial_conds = encode_initial_conditions(init_pos, init_hd, place_cell_ensembles, head_direction_ensembles, radial)
+    ensembles_targets = encode_targets(target_pos, target_hd, place_cell_ensembles, head_direction_ensembles, radial)
 
     init_pos = init_pos.to(device)
     init_hd = init_hd.to(device)
@@ -116,21 +138,21 @@ def decode_outputs(outs, ensembles_targets, device, N_PC, N_HDC, coder=None):
     return bottleneck_acts, logits_pc, logits_hd, pc_targets, hd_targets
 
 
-def encode_initial_conditions(init_pos, init_hd, place_cell_ensembles, head_direction_ensembles):
+def encode_initial_conditions(init_pos, init_hd, place_cell_ensembles, head_direction_ensembles, radial=False):
     initial_conds = []
     for ens in place_cell_ensembles:
-        initial_conds.append(torch.squeeze(ens.get_init(init_pos[:, None, :]), dim=1))
+        initial_conds.append(torch.squeeze(ens.get_init(init_pos[:, None, :], radial), dim=1))
     for ens in head_direction_ensembles:
-        initial_conds.append(torch.squeeze(ens.get_init(init_hd[:, None, :]), dim=1))
+        initial_conds.append(torch.squeeze(ens.get_init(init_hd[:, None, :], radial), dim=1))
     return initial_conds
 
 
-def encode_targets(target_pos, target_hd, place_cell_ensembles, head_direction_ensembles):
+def encode_targets(target_pos, target_hd, place_cell_ensembles, head_direction_ensembles, radial=False):
     ensembles_targets = []
     for ens in place_cell_ensembles:
-        ensembles_targets.append(ens.get_targets(target_pos))
+        ensembles_targets.append(ens.get_targets(target_pos, radial))
     for ens in head_direction_ensembles:
-        ensembles_targets.append(ens.get_targets(target_hd))
+        ensembles_targets.append(ens.get_targets(target_hd, radial))
     return ensembles_targets
 
 

@@ -5,22 +5,25 @@ import numpy as np
 from tqdm import tqdm
 import time
 import argparse
-from watermaze-dataloader import Dataset
-from model_utils import get_latest_model_file, get_model_epoch
-from model_lstm import GridTorch
-from utils import *
+#from watermaze_dataloader import Dataset
+from path_integration.dataloading import Dataset
+from path_integration.model_utils import get_latest_model_file, get_model_epoch
+from path_integration.model_lstm import GridTorch
+from path_integration.utils import *
 import os
 import time
 
 # Arguments
 parser = argparse.ArgumentParser(description="PyTorch Grid Cells Path Integration")
 parser.add_argument("--env_size", type=int, default=2.2, help="size of environment")
+parser.add_argument("--env_watermaze", type=bool, default=False, help="if using watermaze environment set it to True")
+parser.add_argument("--radius", type=int, default=60, help="radius of watermaze environment")
 parser.add_argument("--num_epochs", type=int, default=10, help="number of epochs to stop after")
 parser.add_argument("--steps", type=int, default=100, help="steps per epoch")
 parser.add_argument("--batch_size", type=int, default=128, help="size of one minibatch")
 parser.add_argument("--grad_clip", type=float, default=1e-5, help="gradient clipping")
 parser.add_argument("--num_place_cells", type=int, default=256, help="number of place cells")
-parser.add_argument("--num_headD_cells", type=int, default=12, help="number of head direction cells")
+parser.add_argument("--num_headD_cells", type=int, default=8, help="number of head direction cells")
 parser.add_argument("--btln_dropout", type=float, default=0.5, help="bottleneck dropout")
 parser.add_argument("--weight_decay", type=float, default=1e-5, help="weight decay")
 parser.add_argument("--lr", type=float, default=1e-5, help="initial learning rate")
@@ -29,7 +32,7 @@ parser.add_argument("--hidden_size", type=int, default=256, help="size of hidden
 parser.add_argument(
     "--save_dir",
     type=str,
-    default="./experiments/results/",
+    default="./experiments/",
     help="path to save the experimental config, logs, model. This is not automatically generated.",
 )
 parser.add_argument("--use_saved_model", type=bool, default=False, help="Use previously trained model")
@@ -58,8 +61,10 @@ data_generator = data.DataLoader(dataset, **data_params)
 test_generator = data.DataLoader(dataset, **test_params)
 
 # Create the ensembles that provide targets during training
-place_cell_ensembles = get_place_cell_ensembles(env_size=argsdict["env_size"], neurons_seed=argsdict["seed"], n_pc=N_PC)
-head_direction_ensembles = get_head_direction_ensembles(neurons_seed=argsdict["seed"], n_hdc=N_HDC)
+place_cell_ensembles = get_place_cell_ensembles(env_size=argsdict["env_size"], neurons_seed=argsdict["seed"], n_pc=N_PC, \
+                                                radial=argsdict["env_watermaze"], radius=argsdict["radius"])
+head_direction_ensembles = get_head_direction_ensembles(neurons_seed=argsdict["seed"], n_hdc=N_HDC, \
+                                                        radial=argsdict["env_watermaze"], radius=argsdict["radius"])
 target_ensembles = place_cell_ensembles + head_direction_ensembles
 
 # Create model and restore previous model if desired
@@ -96,17 +101,61 @@ if __name__ == "__main__":
     all_eval_losses = []
     times = []
 
-    for e in tqdm(range(start_epoch, argsdict["num_epochs"])):
+    for e in tqdm(range(start_epoch, argsdict["num_epochs"]+start_epoch)):
         t0 = time.time()
         # TRAIN MODEL
         model.train()
         step = 0
         losses = []
         for X, y in data_generator:
-            print(X, y)
-            break
+            optimiser.zero_grad()
+
+            (inputs, initial_conds, ensembles_targets,) = encode_inputs(
+                X, y, place_cell_ensembles, head_direction_ensembles, device, radial=argsdict["env_watermaze"], coder=coder
+            )
+            outs = model.forward(inputs, initial_conds)
+            (bottleneck_acts, logits_pc, logits_hd, pc_targets, hd_targets) = decode_outputs(
+                outs, ensembles_targets, device, N_PC, N_HDC, coder=coder
+            )
+            loss = get_loss(logits_pc, logits_hd, pc_targets, hd_targets, bottleneck_acts)
+            loss += model.l2_loss * argsdict["weight_decay"]
+            loss.backward()
+            torch.nn.utils.clip_grad_value_(model.parameters(), argsdict["grad_clip"])
+            optimiser.step()
+            losses.append(loss.clone().item())
+            if step > argsdict["steps"]:
+                break
             step += 1
         print(f"EPOCH {e}")
         print(f"training loss : {torch.mean(torch.Tensor(losses))}")
         all_train_losses.append((e, torch.mean(torch.Tensor(losses)).item()))
         times.append(time.time() - t0)
+        # EVALUATE MODEL
+        if (e + 1) % argsdict["save_model_freq"] == 0:
+            torch.save(model.state_dict(), argsdict["save_dir"] + "model_epoch_{}.pt".format(e))
+            with torch.no_grad():
+                model.eval()
+                for data in test_generator:
+                    test_X, test_y = data
+                    (inputs, initial_conds, ensembles_targets) = encode_inputs(
+                        test_X, test_y, place_cell_ensembles, head_direction_ensembles, device, coder=coder,
+                    )
+                    outs = model.forward(inputs, initial_conds)
+                    (bottleneck_acts, logits_pc, logits_hd, pc_targets, hd_targets) = decode_outputs(
+                        outs, ensembles_targets, device, N_PC, N_HDC, coder=coder
+                    )
+                    loss = get_loss(logits_pc, logits_hd, pc_targets, hd_targets, bottleneck_acts)
+                    print(f"evaluation loss: {torch.mean(loss).item()}")
+                    all_eval_losses.append((e, torch.mean(loss).item()))
+                    times.append(time.time() - t0)
+                    break
+    print("TRAINING LOSSES:", all_train_losses)
+    print("EVALUATION LOSSES:", all_eval_losses)
+
+    # SAVE LOSS VALUES
+    lc_path = os.path.join(argsdict["save_dir"], "learning_info.npy")
+    print("\nDONE\n\nSaving learning info to " + lc_path)
+    with open(lc_path, "wb") as f:
+        np.save(f, all_train_losses)
+        np.save(f, all_eval_losses)
+        np.save(f, times)

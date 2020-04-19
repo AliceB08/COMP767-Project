@@ -88,21 +88,23 @@ class watermaze(object):
 
         # determine the vector of direction of movement
         angle = self.direction[A]
-        self.newdirection = np.array([np.cos(angle), np.sin(angle)])
+        newdirection = np.array([np.cos(angle), np.sin(angle)])
 
         # add in momentum to reflect actual swimming dynamics (and normalize, then multiply by stepsize)
-        direction = (1.0 - self.momentum)*self.newdirection + self.momentum*self.prevdir
+        direction = (1.0 - self.momentum)*newdirection + self.momentum*self.prevdir
         direction = direction/np.sqrt((direction**2).sum())
         direction = direction*self.stepsize
-        
+
         # update the position, prevent the rat from actually leaving the water-maze by having it "bounce" off the wall 
         [newposition, direction] = self.poolreflect(self.position[:, self.t] + direction)
+
+        self.headDirection = direction
 
         # if we're now at the very edge of the pool, move us in a little-bit
         if (np.linalg.norm(newposition) == self.radius):
             newposition = np.multiply(np.divide(newposition, np.linalg.norm(newposition)), (self.radius - 1))
 
-        self.angular_velocity = np.sum((self.newdirection - self.prevdir)**2)
+        self.angular_velocity = np.sum((self.headDirection - self.prevdir)**2)
         self.velocity = np.sum((newposition-self.position[:, self.t])**2)
 
         # update the position, time (and previous direction)
@@ -117,7 +119,7 @@ class watermaze(object):
         trajectory["init_hd"] = self.prevdir
         trajectory["ego_vel"] = [self.velocity, math.sin(self.angular_velocity), math.cos(self.angular_velocity)]
         trajectory["target_pos"] = self.position[:, self.t - 1]
-        trajectory["target_hd"] = self.newdirection
+        trajectory["target_hd"] = self.headDirection
 
         return trajectory
         
