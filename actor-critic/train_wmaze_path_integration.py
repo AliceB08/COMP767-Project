@@ -6,7 +6,7 @@ from tqdm import tqdm
 import time
 import argparse
 #from watermaze_dataloader import Dataset
-from path_integration.dataloading import Dataset
+from watermaze_dataloader import Dataset
 from path_integration.model_utils import get_latest_model_file, get_model_epoch
 from path_integration.model_lstm import GridTorch
 from path_integration.utils import *
@@ -16,7 +16,7 @@ import time
 # Arguments
 parser = argparse.ArgumentParser(description="PyTorch Grid Cells Path Integration")
 parser.add_argument("--env_size", type=int, default=2.2, help="size of environment")
-parser.add_argument("--env_watermaze", type=bool, default=False, help="if using watermaze environment set it to True")
+parser.add_argument("--env_watermaze", type=bool, default=True, help="if using watermaze environment set it to True")
 parser.add_argument("--radius", type=int, default=60, help="radius of watermaze environment")
 parser.add_argument("--num_epochs", type=int, default=10, help="number of epochs to stop after")
 parser.add_argument("--steps", type=int, default=100, help="steps per epoch")
@@ -109,7 +109,6 @@ if __name__ == "__main__":
         losses = []
         for X, y in data_generator:
             optimiser.zero_grad()
-
             (inputs, initial_conds, ensembles_targets,) = encode_inputs(
                 X, y, place_cell_ensembles, head_direction_ensembles, device, radial=argsdict["env_watermaze"], coder=coder
             )

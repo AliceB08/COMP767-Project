@@ -81,7 +81,8 @@ class watermaze(object):
         1 indicating NE, etc. 
 
         """
-        
+        trajectory = {}
+
         # check the A argument
         if (not np.isin(A, np.arange(8))):
             print('Error: The argument A must be an integer from 0-7, indicating which action was selected.')
@@ -98,28 +99,24 @@ class watermaze(object):
         # update the position, prevent the rat from actually leaving the water-maze by having it "bounce" off the wall 
         [newposition, direction] = self.poolreflect(self.position[:, self.t] + direction)
 
-        self.headDirection = direction
-
         # if we're now at the very edge of the pool, move us in a little-bit
         if (np.linalg.norm(newposition) == self.radius):
             newposition = np.multiply(np.divide(newposition, np.linalg.norm(newposition)), (self.radius - 1))
 
-        self.angular_velocity = np.sum((self.headDirection - self.prevdir)**2)
-        self.velocity = np.sum((newposition-self.position[:, self.t])**2)
+        angular_velocity = np.sum((direction - self.prevdir)**2)
+        velocity = np.sum((newposition-self.position[:, self.t])**2)
+
+        #fill the trajectory dictionary
+        trajectory["init_pos"] = self.position[:, 0]
+        trajectory["init_hd"] = [np.arctan2(self.prevdir[1], self.prevdir[0])]
+        trajectory["ego_vel"] = [velocity, math.sin(angular_velocity), math.cos(angular_velocity)]
+        trajectory["target_pos"] = self.position[:, self.t - 1]
+        trajectory["target_hd"] = [np.arctan2(direction[1], direction[0])]
 
         # update the position, time (and previous direction)
         self.position[:, self.t+1] = newposition
         self.t                    = self.t + 1
         self.prevdir              = direction
-
-
-    def get_trajectory(self):
-        trajectory = {}
-        trajectory["init_pos"] = self.position[:, 0]
-        trajectory["init_hd"] = self.prevdir
-        trajectory["ego_vel"] = [self.velocity, math.sin(self.angular_velocity), math.cos(self.angular_velocity)]
-        trajectory["target_pos"] = self.position[:, self.t - 1]
-        trajectory["target_hd"] = self.headDirection
 
         return trajectory
         

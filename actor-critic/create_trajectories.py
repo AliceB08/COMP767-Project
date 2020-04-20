@@ -11,25 +11,38 @@ maze = watermaze()
 # set the starting location
 maze.startposition()
 num_episodes = 10000
+
+index = 0
 trajectories = {}
 for e in range(num_episodes):
-    index = 0
     maze.startposition()
     maze.t = 0
+    ego_vels, target_poses, target_hds = [], [], []
+    i = 0
     # run forward for one trial (using random actions for sake of illustration)
     while (not maze.timeup() and not maze.atgoal()):
         # select a random action - this is what your actor critic network needs to provide
         A = np.random.randint(0, 8)
         # move the rat
-        maze.move(A)
-    # print out why the trial ended (note, if the rat reached the goal, then you must deliver a reward)
+        traj = maze.move(A)
+        ego_vels.append(traj["ego_vel"])
+        target_poses.append(traj["target_pos"])
+        target_hds.append(traj["target_hd"])
+        i+=1
     if maze.atgoal():
-        traj = maze.get_trajectory()
-        trajectories[index] = traj
-        index+=1
-    else:
-        print("No more time for you dumb-dumb...")
+        final_traj = {}
+        final_traj['init_pos'] = traj['init_pos']
+        final_traj["init_hd"] = traj["init_hd"]
+        if i>=20:
+            final_traj["ego_vel"] = ego_vels[-20:]
+            final_traj["target_pos"] = target_poses[-20:]
+            final_traj["target_hd"] = target_hds[-20:]
+            trajectories[index] = final_traj
+            index+=1
 
+
+
+print(len(trajectories.keys()))
 filename = "./data/watermaze_data.pkl"
 f = open(filename, "wb")
 pickle.dump(trajectories, f)
