@@ -17,16 +17,15 @@ class Dataset(data.Dataset):
 
     def __len__(self):
         "Denotes the total number of samples"
-        return int(2389)
+        return int(5e3)
 
     def __getitem__(self, index):
         "Generates one sample of data"
         # Load data and get label
-        index = index % 2389
         infile = open(self.data_loc, 'rb')
         loaded_data = pickle.load(infile)
+        index = index % len(loaded_data)
 
-        #loaded_data = self.loaded_data()
         X = (
             Tensor(loaded_data[index]["init_pos"]),
             Tensor(loaded_data[index]["init_hd"]),
