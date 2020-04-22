@@ -7,9 +7,9 @@ import time
 import argparse
 #from watermaze_dataloader import Dataset
 from watermaze_dataloader import Dataset
-from path_integration.model_utils import get_latest_model_file, get_model_epoch
-from path_integration.model_lstm import GridTorch
-from path_integration.utils import *
+from model_utils import get_latest_model_file, get_model_epoch
+from model_lstm import GridTorch
+from utils import *
 import os
 import time
 
