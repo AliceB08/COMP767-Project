@@ -32,12 +32,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 
-from path_integration.ensembles import PlaceCellEnsemble, HeadDirectionCellEnsemble
-
-xrange = range
+from ensembles import PlaceCellEnsemble, HeadDirectionCellEnsemble
 
 np.seterr(invalid="ignore")
-
 
 def get_place_cell_ensembles(
     env_size, neurons_seed, n_pc, targets_type="softmax", lstm_init_type="softmax", pc_scale=[0.01], radial=False, radius=60
@@ -214,7 +211,7 @@ def get_scores_and_plot(
     act = activations.reshape(-1, activations.shape[-1])
     n_units = act.shape[1]
     # Get the rate-map for each unit
-    s = [scorer.calculate_ratemap(xy[:, 0], xy[:, 1], act[:, i]) for i in xrange(n_units)]
+    s = [scorer.calculate_ratemap(xy[:, 0], xy[:, 1], act[:, i]) for i in range(n_units)]
     # Get the scores
     score_60, score_90, max_60_mask, max_90_mask, sac = zip(*[scorer.get_scores(rate_map) for rate_map in s])
     # Separations
@@ -228,7 +225,7 @@ def get_scores_and_plot(
     cols = 16
     rows = int(np.ceil(n_units / cols))
     fig = plt.figure(figsize=(24, rows * 4))
-    for i in xrange(n_units):
+    for i in range(n_units):
         rf = plt.subplot(rows * 2, cols, i + 1)
         acr = plt.subplot(rows * 2, cols, n_units + i + 1)
         if i < n_units:
@@ -237,7 +234,7 @@ def get_scores_and_plot(
             # Plot the activation maps
             scorer.plot_ratemap(s[index], ax=rf, title=title, cmap=cm)
             # Plot the autocorrelation of the activation maps
-            scorer.plot_sac(sac[index], mask_params=max_60_mask[index], ax=acr, title=title, cmap=cm)
+            _ = scorer.plot_sac(sac[index], mask_params=max_60_mask[index], ax=acr, title=title, cmap=cm)
     # Save
     if plot_graphs:
         if not os.path.exists(directory):
