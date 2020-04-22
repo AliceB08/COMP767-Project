@@ -8,15 +8,18 @@ from dataloading import Dataset
 import glob
 import numpy as np
 from datetime import datetime
+import time
+from tqdm import tqdm
 
 from model_lstm import GridTorch
 from model_utils import get_latest_model_file, get_model_epoch
 from scores import GridScorer
 from utils import *
+from generate_gif import generate_gif
 
 # Parameters
 ENV_SIZE = 2.2
-BATCH_SIZE = 4000
+BATCH_SIZE = 1024
 SEED = 9999
 N_PC = [256]
 N_HDC = [12]
@@ -32,7 +35,7 @@ def get_file_name(exp, epoch_nb):
         copy_number += 1
     return filename
 
-def create_rate_maps(exp, epoch_nb=None):
+def create_rate_maps(exp, epoch_nb=None, create_PDF=True, create_gif_frame=False):
     if epoch_nb==None:
         epoch_nb = get_model_epoch(get_latest_model_file(f"./experiments/results/{exp}/"))
     # Loading datasets
@@ -73,10 +76,21 @@ def create_rate_maps(exp, epoch_nb=None):
     masks_parameters = zip(starts, ends.tolist())
     scorer = GridScorer(20, ((-1.1, 1.1), (-1.1, 1.1)), masks_parameters)
 
-    scoress = get_scores_and_plot(scorer, pos_xy, acts, "./ratemaps/", get_file_name(exp, epoch_nb))
+    if create_PDF:
+        _ = get_scores_and_plot(scorer, pos_xy, acts, "./ratemaps/", get_file_name(exp, epoch_nb))
+    if create_gif_frame:
+        generate_gif(scorer, pos_xy, acts, "./ratemaps/", get_file_name(exp, epoch_nb), epoch=epoch_nb)
 
 
 if __name__ == "__main__":
+    start = time.time()
     EXPERIMENTS = ["2020-04-15_14-40", "2020-04-15_15-25", "2020-04-15_16-21"]
-    for i in [1,2]:
-        create_rate_maps(EXPERIMENTS[i])
+    
+    '''Uncomment the following lines to generate the PDF'''
+    create_rate_maps(EXPERIMENTS[0])
+    print(f"Done in {time.time()-start:.0f} seconds for batch size {BATCH_SIZE}")
+
+    '''Uncomment the following lines to generate the gif'''
+    # for epoch in tqdm(range(9, 2000, 10)):
+    #     create_rate_maps(EXPERIMENTS[0], epoch_nb=epoch, create_gif_frame=True, create_PDF=False)
+    # print(f"Done in {time.time()-start:.0f} seconds for batch size {BATCH_SIZE}")

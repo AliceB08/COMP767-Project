@@ -45,6 +45,7 @@ class GridTorch(nn.Module):
         self.lstm = nn.LSTM(input_size=3, hidden_size=nh_lstm)
 
         self.bottleneck = nn.Linear(nh_lstm, nh_bottleneck, bias=bottleneck_has_bias)
+        self.non_linearity = nn.Tanh()
         self.pc_logits = nn.Linear(nh_bottleneck, target_ensembles[0].n_cells)
         self.hd_logits = nn.Linear(nh_bottleneck, target_ensembles[1].n_cells)
 
@@ -88,7 +89,8 @@ class GridTorch(nn.Module):
             if self.disable_LSTM_training:
                 h_t, c_t = h_t.detach(), c_t.detach()
             # The ratemaps take the weights of the battleneck activation (without the dropout)
-            bottleneck_activations = self.dropout(self.bottleneck(h_t))
+            non_linearity = self.non_linearity(self.bottleneck(h_t))
+            bottleneck_activations = self.dropout(non_linearity)
 
             pc_preds = self.pc_logits(bottleneck_activations)
             hd_preds = self.hd_logits(bottleneck_activations)
