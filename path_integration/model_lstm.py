@@ -34,8 +34,10 @@ class GridTorch(nn.Module):
         dropoutrates_bottleneck=0.5,  # Dropout rate at bottleneck
         bottleneck_has_bias=False,
         disable_LSTM_training=False, # Use pretrained LSTM
+        non_linearity=None
     ):
         super().__init__()
+        assert non_linearity in [None, "tanh", "relu"]
         self.target_ensembles = target_ensembles
         self.disable_LSTM_training = disable_LSTM_training
         # Weights to compute the initial cell and hidden state of the LSTM
@@ -45,7 +47,12 @@ class GridTorch(nn.Module):
         self.lstm = nn.LSTM(input_size=3, hidden_size=nh_lstm)
 
         self.bottleneck = nn.Linear(nh_lstm, nh_bottleneck, bias=bottleneck_has_bias)
-        self.non_linearity = nn.Tanh()
+        if non_linearity=="tanh":
+            self.non_linearity = nn.Tanh()
+        elif non_linearity=="relu":
+            self.non_linearity = nn.ReLU()
+        else:
+            self.non_linearity = nn.Identity()
         self.pc_logits = nn.Linear(nh_bottleneck, target_ensembles[0].n_cells)
         self.hd_logits = nn.Linear(nh_bottleneck, target_ensembles[1].n_cells)
 

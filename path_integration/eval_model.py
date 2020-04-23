@@ -12,7 +12,7 @@ import time
 from tqdm import tqdm
 
 from model_lstm import GridTorch
-from model_utils import get_latest_model_file, get_model_epoch
+from model_utils import *
 from scores import GridScorer
 from utils import *
 from generate_gif import generate_gif
@@ -53,7 +53,7 @@ def create_rate_maps(exp, epoch_nb=None, create_PDF=True, create_gif_frame=False
     head_direction_ensembles[0].means = torch.Tensor(tmp[1].means)
     head_direction_ensembles[0].kappa = torch.Tensor(tmp[1].kappa)
 
-    model = GridTorch(target_ensembles)
+    model = GridTorch(target_ensembles, non_linearity="relu")
     model.load_state_dict(torch.load(f"./experiments/results/{exp}/model_epoch_{epoch_nb}.pt"))
     model.eval()
 
@@ -84,10 +84,10 @@ def create_rate_maps(exp, epoch_nb=None, create_PDF=True, create_gif_frame=False
 
 if __name__ == "__main__":
     start = time.time()
-    EXPERIMENTS = ["2020-04-15_14-40", "2020-04-15_15-25", "2020-04-15_16-21"]
+    EXPERIMENTS = ["2020-04-15_14-40", "2020-04-15_15-25", "2020-04-15_16-21", "2020-04-22_17-06"]
     
     '''Uncomment the following lines to generate the PDF'''
-    create_rate_maps(EXPERIMENTS[0])
+    create_rate_maps(EXPERIMENTS[3])
     print(f"Done in {time.time()-start:.0f} seconds for batch size {BATCH_SIZE}")
 
     '''Uncomment the following lines to generate the gif'''

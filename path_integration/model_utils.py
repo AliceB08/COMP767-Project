@@ -21,3 +21,9 @@ def get_model_epoch(file):
     """
     n = file.split('_')[-1].split('.')[0]
     return int(n)
+
+
+def get_exp_non_linearity(exp):
+    if exp in ["2020-04-22_17-06"]:
+        return "tanh"
+    return None
