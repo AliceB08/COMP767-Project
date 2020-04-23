@@ -27,6 +27,7 @@ parser.add_argument("--weight_decay", type=float, default=1e-5, help="weight dec
 parser.add_argument("--lr", type=float, default=1e-5, help="initial learning rate")
 parser.add_argument("--momentum", type=float, default=0.9, help="momentum")
 parser.add_argument("--hidden_size", type=int, default=256, help="size of hidden layers")
+parser.add_argument("--activation", default=None, help="Non-linearity use in activation between last 2 linear layers")
 parser.add_argument(
     "--save_dir",
     type=str,
@@ -70,6 +71,7 @@ model = GridTorch(
     n_pcs=argsdict["num_place_cells"],
     n_hdcs=argsdict["num_headD_cells"],
     disable_LSTM_training=argsdict["disable_LSTM_training"],
+    non_linearity=argsdict["activation"],
 ).to(device)
 start_epoch = 0
 if len(argsdict["use_saved_model_dir"])!=0:
@@ -95,6 +97,7 @@ optimiser = torch.optim.RMSprop(
 
 if __name__ == "__main__":
     print(argsdict)
+    print(model)
     print("USING DEVICE:", device)
     print("DEVICE PROPERTIES:", torch.cuda.get_device_properties(0))
     torch.save(target_ensembles, argsdict["save_dir"] + "target_ensembles.pt")
