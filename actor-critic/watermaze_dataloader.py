@@ -17,7 +17,7 @@ class Dataset(data.Dataset):
 
     def __len__(self):
         "Denotes the total number of samples"
-        return int(5e3)
+        return int(3000)
 
     def __getitem__(self, index):
         "Generates one sample of data"
