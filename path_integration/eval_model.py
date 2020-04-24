@@ -12,6 +12,7 @@ import time
 from tqdm import tqdm
 
 from model_lstm import GridTorch
+from old_model_to_use_for_plots.model_lstm import GridTorch as OldGridTorch
 from model_utils import *
 from scores import GridScorer
 from utils import *
@@ -35,7 +36,7 @@ def get_file_name(exp, epoch_nb):
         copy_number += 1
     return filename
 
-def create_rate_maps(exp, epoch_nb=None, create_PDF=True, create_gif_frame=False):
+def create_rate_maps(exp, old_experiment, epoch_nb=None, create_PDF=True, create_gif_frame=False):
     if epoch_nb==None:
         epoch_nb = get_model_epoch(get_latest_model_file(f"./experiments/results/{exp}/"))
     # Loading datasets
@@ -53,7 +54,10 @@ def create_rate_maps(exp, epoch_nb=None, create_PDF=True, create_gif_frame=False
     head_direction_ensembles[0].means = torch.Tensor(tmp[1].means)
     head_direction_ensembles[0].kappa = torch.Tensor(tmp[1].kappa)
 
-    model = GridTorch(target_ensembles, non_linearity=get_exp_non_linearity(exp))
+    if old_experiment:
+        model = OldGridTorch(target_ensembles, non_linearity=get_exp_non_linearity(exp))
+    else:
+        model = GridTorch(target_ensembles, non_linearity=get_exp_non_linearity(exp))
     model.load_state_dict(torch.load(f"./experiments/results/{exp}/model_epoch_{epoch_nb}.pt"))
     model.eval()
 
@@ -85,12 +89,16 @@ def create_rate_maps(exp, epoch_nb=None, create_PDF=True, create_gif_frame=False
 if __name__ == "__main__":
     start = time.time()
     EXPERIMENTS = ["2020-04-15_14-40", "2020-04-15_15-25", "2020-04-15_16-21", "2020-04-22_17-06", "2020-04-23_14-23"]
+    # Breaking change when using switching layer + target ensemble, specify the old experiments
+    OLD_EXPERIMENTS = ["2020-04-15_14-40", "2020-04-15_15-25", "2020-04-15_16-21", "2020-04-22_17-06", "2020-04-23_14-23"]
     
     '''Uncomment the following lines to generate the PDF'''
-    create_rate_maps(EXPERIMENTS[-1])
+    experiment = EXPERIMENTS[-1]
+    create_rate_maps(experiment, experiment in OLD_EXPERIMENTS)
     print(f"Done in {time.time()-start:.0f} seconds for batch size {BATCH_SIZE}")
 
     '''Uncomment the following lines to generate the gif'''
+    # experiment = EXPERIMENTS[0]
     # for epoch in tqdm(range(9, 2000, 10)):
-    #     create_rate_maps(EXPERIMENTS[0], epoch_nb=epoch, create_gif_frame=True, create_PDF=False)
+    #     create_rate_maps(experiment, experiment in OLD_EXPERIMENTS, epoch_nb=epoch, create_gif_frame=True, create_PDF=False)
     # print(f"Done in {time.time()-start:.0f} seconds for batch size {BATCH_SIZE}")

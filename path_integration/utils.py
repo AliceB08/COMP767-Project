@@ -90,9 +90,10 @@ def get_head_direction_ensembles(
     return head_direction_ensembles
 
 
-def encode_inputs(X, y, place_cell_ensembles, head_direction_ensembles, device, radial=False, coder=None):
+def encode_inputs(X, y, target_ensembles, device, radial=False, coder=None):
     init_pos, init_hd, inputs = X
     target_pos, target_hd = y
+    place_cell_ensembles, head_direction_ensembles = [target_ensembles[0]], [target_ensembles[1]]
 
     initial_conds = encode_initial_conditions(init_pos, init_hd, place_cell_ensembles, head_direction_ensembles, radial)
     ensembles_targets = encode_targets(target_pos, target_hd, place_cell_ensembles, head_direction_ensembles, radial)

@@ -33,14 +33,12 @@ class GridTorch(nn.Module):
         n_hdcs=12,  # number of head direction cells
         dropoutrates_bottleneck=0.5,  # Dropout rate at bottleneck
         bottleneck_has_bias=False,
-        disable_LSTM_training=False,  # Use pretrained LSTM
-        non_linearity=None,
-        n_switching_targets=1,
+        disable_LSTM_training=False, # Use pretrained LSTM
+        non_linearity=None
     ):
         super().__init__()
         assert non_linearity in [None, "tanh", "relu"]
         self.target_ensembles = target_ensembles
-        self.n_switching_targets = n_switching_targets
         self.disable_LSTM_training = disable_LSTM_training
         # Weights to compute the initial cell and hidden state of the LSTM
         self.state_embed = nn.Linear(n_pcs + n_hdcs, nh_lstm)  # weight W^cp and W^cd
@@ -48,43 +46,38 @@ class GridTorch(nn.Module):
         # Recurrent layer
         self.lstm = nn.LSTM(input_size=3, hidden_size=nh_lstm)
 
-        if non_linearity == "tanh":
+        self.bottleneck = nn.Linear(nh_lstm, nh_bottleneck, bias=bottleneck_has_bias)
+        if non_linearity=="tanh":
             self.non_linearity = nn.Tanh()
-        elif non_linearity == "relu":
+        elif non_linearity=="relu":
             self.non_linearity = nn.ReLU()
         else:
             self.non_linearity = nn.Identity()
-        self.pc_logits, self.hd_logits, self.bottleneck = nn.ModuleList(), nn.ModuleList(), nn.ModuleList()
-        for i in range(self.n_switching_targets):
-            self.bottleneck.append(nn.Linear(nh_lstm, nh_bottleneck, bias=bottleneck_has_bias))
-            self.pc_logits.append(nn.Linear(nh_bottleneck, target_ensembles[i][0].n_cells))
-            self.hd_logits.append(nn.Linear(nh_bottleneck, target_ensembles[i][1].n_cells))
+        self.pc_logits = nn.Linear(nh_bottleneck, target_ensembles[0].n_cells)
+        self.hd_logits = nn.Linear(nh_bottleneck, target_ensembles[1].n_cells)
 
         self.dropout = nn.Dropout(dropoutrates_bottleneck)
 
         with torch.no_grad():
             self.state_embed.weight = init_trunc_normal(self.state_embed.weight, 128)
-            nn.init.zeros_(self.state_embed.bias)
             self.cell_embed.weight = init_trunc_normal(self.cell_embed.weight, 128)
-            nn.init.zeros_(self.cell_embed.bias)
-            for i in range(self.n_switching_targets):
-                self.bottleneck[i].weight = init_trunc_normal(self.bottleneck[i].weight, 256)
-                self.pc_logits[i].weight = init_trunc_normal(self.pc_logits[i].weight, 256)
-                nn.init.zeros_(self.pc_logits[i].bias)
-                self.hd_logits[i].weight = init_trunc_normal(self.hd_logits[i].weight, 12)
-                nn.init.zeros_(self.hd_logits[i].bias)
+            self.bottleneck.weight = init_trunc_normal(self.bottleneck.weight, 256)
+            self.pc_logits.weight = init_trunc_normal(self.pc_logits.weight, 256)
+            self.hd_logits.weight = init_trunc_normal(self.hd_logits.weight, 12)
             nn.init.kaiming_uniform_(self.lstm.weight_ih_l0)
             nn.init.kaiming_uniform_(self.lstm.weight_hh_l0)
+            nn.init.zeros_(self.state_embed.bias)
+            nn.init.zeros_(self.cell_embed.bias)
+            nn.init.zeros_(self.pc_logits.bias)
+            nn.init.zeros_(self.hd_logits.bias)
             nn.init.zeros_(self.lstm.bias_hh_l0)
             nn.init.zeros_(self.lstm.bias_ih_l0)
 
-        # if self.target_ensembles == 1:  # Make it compatible with old version
-        #     self.bottleneck, self.pc_logits, self.hd_logits = self.bottleneck[0], self.pc_logits[0], self.hd_logits[0]
+    @property
+    def l2_loss(self,):
+        return self.bottleneck.weight.norm(2) + self.pc_logits.weight.norm(2) + self.hd_logits.weight.norm(2)
 
-    def l2_loss(self, i):
-        return self.bottleneck[i].weight.norm(2) + self.pc_logits[i].weight.norm(2) + self.hd_logits[i].weight.norm(2)
-
-    def forward(self, x, initial_conds, target_set_nb):
+    def forward(self, x, initial_conds):
         batch_size = x.shape[1]
         init = torch.cat(initial_conds, dim=1)  # Shape: batch_size x 268
         init_state = self.state_embed(init)  # l_0; Shape: batch_size x 128
@@ -103,11 +96,11 @@ class GridTorch(nn.Module):
             if self.disable_LSTM_training:
                 h_t, c_t = h_t.detach(), c_t.detach()
             # The ratemaps take the weights of the battleneck activation (without the dropout)
-            non_linearity = self.non_linearity(self.bottleneck[target_set_nb](h_t))
+            non_linearity = self.non_linearity(self.bottleneck(h_t))
             bottleneck_activations = self.dropout(non_linearity)
 
-            pc_preds = self.pc_logits[target_set_nb](bottleneck_activations)
-            hd_preds = self.hd_logits[target_set_nb](bottleneck_activations)
+            pc_preds = self.pc_logits(bottleneck_activations)
+            hd_preds = self.hd_logits(bottleneck_activations)
 
             logits_hd += [hd_preds]
             logits_pc += [pc_preds]

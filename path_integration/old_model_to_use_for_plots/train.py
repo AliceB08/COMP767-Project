@@ -28,7 +28,6 @@ parser.add_argument("--lr", type=float, default=1e-5, help="initial learning rat
 parser.add_argument("--momentum", type=float, default=0.9, help="momentum")
 parser.add_argument("--hidden_size", type=int, default=256, help="size of hidden layers")
 parser.add_argument("--activation", default=None, help="Non-linearity use in activation between last 2 linear layers")
-parser.add_argument("--nb_switching_targets", type=int, default=1, help="Number of target ensemble/last layers couples to use to train the LSTM (PI module)")
 parser.add_argument(
     "--save_dir",
     type=str,
@@ -49,7 +48,6 @@ torch.manual_seed(argsdict["seed"])
 np.random.seed(argsdict["seed"])
 
 # Parameters
-N_SWITCHING_TARGETS = argsdict["nb_switching_targets"]
 N_PC = [argsdict["num_place_cells"]]
 N_HDC = [argsdict["num_headD_cells"]]
 data_params = {"batch_size": argsdict["batch_size"], "shuffle": True, "num_workers": 6}
@@ -63,11 +61,9 @@ data_generator = data.DataLoader(dataset, **data_params)
 test_generator = data.DataLoader(dataset, **test_params)
 
 # Create the ensembles that provide targets during training
-target_ensembles = []
-for i in range(N_SWITCHING_TARGETS):
-    place_cell_ensembles = get_place_cell_ensembles(env_size=argsdict["env_size"], neurons_seed=argsdict["seed"], n_pc=N_PC)
-    head_direction_ensembles = get_head_direction_ensembles(neurons_seed=argsdict["seed"], n_hdc=N_HDC)
-    target_ensembles.append(place_cell_ensembles + head_direction_ensembles)
+place_cell_ensembles = get_place_cell_ensembles(env_size=argsdict["env_size"], neurons_seed=argsdict["seed"], n_pc=N_PC)
+head_direction_ensembles = get_head_direction_ensembles(neurons_seed=argsdict["seed"], n_hdc=N_HDC)
+target_ensembles = place_cell_ensembles + head_direction_ensembles
 
 # Create model and restore previous model if desired
 model = GridTorch(
@@ -76,7 +72,6 @@ model = GridTorch(
     n_hdcs=argsdict["num_headD_cells"],
     disable_LSTM_training=argsdict["disable_LSTM_training"],
     non_linearity=argsdict["activation"],
-    n_switching_targets = N_SWITCHING_TARGETS
 ).to(device)
 start_epoch = 0
 if len(argsdict["use_saved_model_dir"])!=0:
@@ -118,23 +113,20 @@ if __name__ == "__main__":
         step = 0
         losses = []
         for X, y in data_generator:
-            av_loss = []
-            for target_set_nb in range(N_SWITCHING_TARGETS):
-                optimiser.zero_grad()
-                (inputs, initial_conds, ensembles_targets,) = encode_inputs(
-                    X, y, target_ensembles[target_set_nb], device, coder=coder
-                )
-                outs = model.forward(inputs, initial_conds, target_set_nb)
-                (bottleneck_acts, logits_pc, logits_hd, pc_targets, hd_targets) = decode_outputs(
-                    outs, ensembles_targets, device, N_PC, N_HDC, coder=coder
-                )
-                loss = get_loss(logits_pc, logits_hd, pc_targets, hd_targets, bottleneck_acts)
-                loss += model.l2_loss(i=target_set_nb) * argsdict["weight_decay"]
-                loss.backward()
-                torch.nn.utils.clip_grad_value_(model.parameters(), argsdict["grad_clip"])
-                optimiser.step()
-                av_loss.append(loss.clone().item())
-            losses.append(np.mean(av_loss))
+            optimiser.zero_grad()
+            (inputs, initial_conds, ensembles_targets,) = encode_inputs(
+                X, y, target_ensembles, device, coder=coder
+            )
+            outs = model.forward(inputs, initial_conds)
+            (bottleneck_acts, logits_pc, logits_hd, pc_targets, hd_targets) = decode_outputs(
+                outs, ensembles_targets, device, N_PC, N_HDC, coder=coder
+            )
+            loss = get_loss(logits_pc, logits_hd, pc_targets, hd_targets, bottleneck_acts)
+            loss += model.l2_loss * argsdict["weight_decay"]
+            loss.backward()
+            torch.nn.utils.clip_grad_value_(model.parameters(), argsdict["grad_clip"])
+            optimiser.step()
+            losses.append(loss.clone().item())
             if step > argsdict["steps"]:
                 break
             step += 1
@@ -148,20 +140,17 @@ if __name__ == "__main__":
             with torch.no_grad():
                 model.eval()
                 for data in test_generator:
-                    av_loss = []
-                    for target_set_nb in range(N_SWITCHING_TARGETS):
-                        test_X, test_y = data
-                        (inputs, initial_conds, ensembles_targets) = encode_inputs(
-                            test_X, test_y, target_ensembles[target_set_nb], device, coder=coder,
-                        )
-                        outs = model.forward(inputs, initial_conds, target_set_nb)
-                        (bottleneck_acts, logits_pc, logits_hd, pc_targets, hd_targets) = decode_outputs(
-                            outs, ensembles_targets, device, N_PC, N_HDC, coder=coder
-                        )
-                        loss = get_loss(logits_pc, logits_hd, pc_targets, hd_targets, bottleneck_acts)
-                        av_loss.append(torch.mean(loss).item())
-                    print(f"evaluation loss: {np.mean(av_loss)}")
-                    all_eval_losses.append((e, np.mean(av_loss)))
+                    test_X, test_y = data
+                    (inputs, initial_conds, ensembles_targets) = encode_inputs(
+                        test_X, test_y, target_ensembles, device, coder=coder,
+                    )
+                    outs = model.forward(inputs, initial_conds)
+                    (bottleneck_acts, logits_pc, logits_hd, pc_targets, hd_targets) = decode_outputs(
+                        outs, ensembles_targets, device, N_PC, N_HDC, coder=coder
+                    )
+                    loss = get_loss(logits_pc, logits_hd, pc_targets, hd_targets, bottleneck_acts)
+                    print(f"evaluation loss: {torch.mean(loss).item()}")
+                    all_eval_losses.append((e, torch.mean(loss).item()))
                     times.append(time.time() - t0)
                     break
     print("TRAINING LOSSES:", all_train_losses)
