@@ -26,4 +26,6 @@ def get_model_epoch(file):
 def get_exp_non_linearity(exp):
     if exp in ["2020-04-22_17-06"]:
         return "tanh"
+    elif exp in ["2020-04-23_14-23"]:
+        return "relu"
     return None

@@ -53,7 +53,7 @@ def create_rate_maps(exp, epoch_nb=None, create_PDF=True, create_gif_frame=False
     head_direction_ensembles[0].means = torch.Tensor(tmp[1].means)
     head_direction_ensembles[0].kappa = torch.Tensor(tmp[1].kappa)
 
-    model = GridTorch(target_ensembles, non_linearity="relu")
+    model = GridTorch(target_ensembles, non_linearity=get_exp_non_linearity(exp))
     model.load_state_dict(torch.load(f"./experiments/results/{exp}/model_epoch_{epoch_nb}.pt"))
     model.eval()
 
@@ -84,10 +84,10 @@ def create_rate_maps(exp, epoch_nb=None, create_PDF=True, create_gif_frame=False
 
 if __name__ == "__main__":
     start = time.time()
-    EXPERIMENTS = ["2020-04-15_14-40", "2020-04-15_15-25", "2020-04-15_16-21", "2020-04-22_17-06"]
+    EXPERIMENTS = ["2020-04-15_14-40", "2020-04-15_15-25", "2020-04-15_16-21", "2020-04-22_17-06", "2020-04-23_14-23"]
     
     '''Uncomment the following lines to generate the PDF'''
-    create_rate_maps(EXPERIMENTS[3])
+    create_rate_maps(EXPERIMENTS[-1])
     print(f"Done in {time.time()-start:.0f} seconds for batch size {BATCH_SIZE}")
 
     '''Uncomment the following lines to generate the gif'''
