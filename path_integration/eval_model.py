@@ -36,7 +36,7 @@ def get_file_name(exp, epoch_nb):
         copy_number += 1
     return filename
 
-def create_rate_maps(exp, old_experiment, epoch_nb=None, create_PDF=True, create_gif_frame=False):
+def create_rate_maps(exp, old_experiment, epoch_nb=None, create_PDF=True, create_gif_frame=False, target_set_nb=0):
     if epoch_nb==None:
         epoch_nb = get_model_epoch(get_latest_model_file(f"./experiments/results/{exp}/"))
     # Loading datasets
@@ -44,21 +44,34 @@ def create_rate_maps(exp, old_experiment, epoch_nb=None, create_PDF=True, create
     data_generator = data.DataLoader(dataset, **data_params)
 
     # Create the ensembles that provide targets during training
-    place_cell_ensembles = get_place_cell_ensembles(env_size=ENV_SIZE, neurons_seed=SEED, n_pc=N_PC)
-    head_direction_ensembles = get_head_direction_ensembles(neurons_seed=SEED, n_hdc=N_HDC,)
-    target_ensembles = place_cell_ensembles + head_direction_ensembles
 
     tmp = torch.load(f"./experiments/results/{exp}/target_ensembles.pt")
-    place_cell_ensembles[0].means = torch.Tensor(tmp[0].means)
-    place_cell_ensembles[0].variances = torch.Tensor(tmp[0].variances)
-    head_direction_ensembles[0].means = torch.Tensor(tmp[1].means)
-    head_direction_ensembles[0].kappa = torch.Tensor(tmp[1].kappa)
 
     if old_experiment:
+        place_cell_ensembles = get_place_cell_ensembles(env_size=ENV_SIZE, neurons_seed=SEED, n_pc=N_PC)
+        head_direction_ensembles = get_head_direction_ensembles(neurons_seed=SEED, n_hdc=N_HDC,)
+        target_ensembles = place_cell_ensembles + head_direction_ensembles
+        place_cell_ensembles[0].means = torch.Tensor(tmp[0].means)
+        place_cell_ensembles[0].variances = torch.Tensor(tmp[0].variances)
+        head_direction_ensembles[0].means = torch.Tensor(tmp[1].means)
+        head_direction_ensembles[0].kappa = torch.Tensor(tmp[1].kappa)
         model = OldGridTorch(target_ensembles, non_linearity=get_exp_non_linearity(exp))
+        model.load_state_dict(torch.load(f"./experiments/results/{exp}/model_epoch_{epoch_nb}.pt"))
     else:
-        model = GridTorch(target_ensembles, non_linearity=get_exp_non_linearity(exp))
-    model.load_state_dict(torch.load(f"./experiments/results/{exp}/model_epoch_{epoch_nb}.pt"))
+        N_SWITCHING_TARGETS = len(tmp)
+        target_ensembles = []
+        for i in range(N_SWITCHING_TARGETS):
+            place_cell_ensembles = get_place_cell_ensembles(env_size=ENV_SIZE, neurons_seed=SEED, n_pc=N_PC)
+            head_direction_ensembles = get_head_direction_ensembles(neurons_seed=SEED, n_hdc=N_HDC)
+            target_ensembles.append(place_cell_ensembles + head_direction_ensembles)
+        for i in range(N_SWITCHING_TARGETS):
+            target_ensembles[i][0].means = torch.Tensor(tmp[i][0].means)
+            target_ensembles[i][0].variances = torch.Tensor(tmp[i][0].variances)
+            target_ensembles[i][1].means = torch.Tensor(tmp[i][1].means)
+            target_ensembles[i][1].kappa = torch.Tensor(tmp[i][1].kappa)
+        model = GridTorch(target_ensembles, non_linearity=get_exp_non_linearity(exp), n_switching_targets = N_SWITCHING_TARGETS)
+        model.load_state_dict(torch.load(f"./experiments/results/{exp}/model_epoch_{epoch_nb}.pt"))
+    
     model.eval()
 
     for X, y in data_generator:
@@ -67,9 +80,13 @@ def create_rate_maps(exp, old_experiment, epoch_nb=None, create_PDF=True, create
     # Initialise for forward pass
     init_pos, init_hd, ego_vel = X
     target_pos, target_hd = y
-    initial_conds = encode_initial_conditions(init_pos, init_hd, place_cell_ensembles, head_direction_ensembles)
     # Forward pass
-    outs = model.forward(ego_vel.transpose(1, 0), initial_conds)
+    if old_experiment:
+        initial_conds = encode_initial_conditions(init_pos, init_hd, place_cell_ensembles, head_direction_ensembles)
+        outs = model.forward(ego_vel.transpose(1, 0), initial_conds)
+    else:
+        initial_conds = encode_initial_conditions(init_pos, init_hd, [target_ensembles[target_set_nb][0]], [target_ensembles[target_set_nb][1]])
+        outs = model.forward(ego_vel.transpose(1, 0), initial_conds, target_set_nb)
     _, _, bottleneck_acts, _, _ = outs
     acts = bottleneck_acts.transpose(1, 0).detach().numpy()
     pos_xy = target_pos.detach().numpy()

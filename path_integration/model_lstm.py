@@ -78,9 +78,6 @@ class GridTorch(nn.Module):
             nn.init.zeros_(self.lstm.bias_hh_l0)
             nn.init.zeros_(self.lstm.bias_ih_l0)
 
-        # if self.target_ensembles == 1:  # Make it compatible with old version
-        #     self.bottleneck, self.pc_logits, self.hd_logits = self.bottleneck[0], self.pc_logits[0], self.hd_logits[0]
-
     def l2_loss(self, i):
         return self.bottleneck[i].weight.norm(2) + self.pc_logits[i].weight.norm(2) + self.hd_logits[i].weight.norm(2)
 
@@ -103,8 +100,10 @@ class GridTorch(nn.Module):
             if self.disable_LSTM_training:
                 h_t, c_t = h_t.detach(), c_t.detach()
             # The ratemaps take the weights of the battleneck activation (without the dropout)
-            non_linearity = self.non_linearity(self.bottleneck[target_set_nb](h_t))
-            bottleneck_activations = self.dropout(non_linearity)
+            non_lin_1 = self.non_linearity(h_t)
+            grid_cell_out = self.bottleneck[target_set_nb](non_lin_1)
+            non_lin_2 = self.non_linearity(grid_cell_out)
+            bottleneck_activations = self.dropout(non_lin_2)
 
             pc_preds = self.pc_logits[target_set_nb](bottleneck_activations)
             hd_preds = self.hd_logits[target_set_nb](bottleneck_activations)
