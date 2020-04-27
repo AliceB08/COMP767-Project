@@ -8,3 +8,10 @@
 [ ] Run PI experiment with ReLU activation
 [ ] Change architecture to multiple switching last layers
 [ ] Run PI experiment with switching last layers
+
+## Mandana
+[x] Run PI experiment on watermaze
+[ ] Plot the grid code patterns for the trained model on watermaze 
+[ ] Rescale the environment and train the LSTM using previously generated ensemble to check if they are transferable
+[ ] Collaborate with Arna to get the plots on the navigation tasks
+
