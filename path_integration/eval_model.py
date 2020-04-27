@@ -88,7 +88,7 @@ def create_rate_maps(exp, old_experiment, epoch_nb=None, create_PDF=True, create
 
 if __name__ == "__main__":
     start = time.time()
-    EXPERIMENTS = ["2020-04-15_14-40", "2020-04-15_15-25", "2020-04-15_16-21", "2020-04-22_17-06", "2020-04-23_14-23"]
+    EXPERIMENTS = ["2020-04-15_14-40", "2020-04-15_15-25", "2020-04-15_16-21", "2020-04-22_17-06", "2020-04-23_14-23", "2020-04-24_15-41"]
     # Breaking change when using switching layer + target ensemble, specify the old experiments
     OLD_EXPERIMENTS = ["2020-04-15_14-40", "2020-04-15_15-25", "2020-04-15_16-21", "2020-04-22_17-06", "2020-04-23_14-23"]
     
