@@ -28,7 +28,7 @@ parser.add_argument("--lr", type=float, default=1e-5, help="initial learning rat
 parser.add_argument("--momentum", type=float, default=0.9, help="momentum")
 parser.add_argument("--hidden_size", type=int, default=256, help="size of hidden layers")
 parser.add_argument("--activation", default=None, help="Non-linearity use in activation between last 2 linear layers")
-parser.add_argument("--nb_switching_targets", type=int, default=3, help="Number of target ensemble/last layers couples to use to train the LSTM (PI module)")
+parser.add_argument("--nb_switching_targets", type=int, default=1, help="Number of target ensemble/last layers couples to use to train the LSTM (PI module)")
 parser.add_argument(
     "--save_dir",
     type=str,
