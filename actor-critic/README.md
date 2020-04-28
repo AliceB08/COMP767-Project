@@ -28,7 +28,7 @@ Implements the actor-critic algorithm using TD-error. The action is sampled from
 
 ## How to run
 * ~~To visualize the updates and trajectories taken in each episode, run *actorCritic.py*: *python actorCritic.py* and uncomment line 228 in the *main* function (effectively use verbose=True for *TD_lambda()* function~~
-* ~~To plot the learning performance (average number of steps taken every 500 episodes), run *python actorCritic.py* as it is. ~~
+* ~~To plot the learning performance (average number of steps taken every 500 episodes), run *python actorCritic.py* as it is.~~
 * To visualize the updates and trajectories taken in each episode, run *actorCritic_goalCode.py*: *python actorCritic_goalCode.py* and uncomment line 280 in the *main* function (effectively use verbose=True for *TD_lambda()* function
 * To plot the learning performance (average number of steps taken every 200 episodes), run *python actorCritic_goalCode.py* as it is. 
 
