@@ -137,7 +137,7 @@ if __name__ == "__main__":
                 for data in test_generator:
                     test_X, test_y = data
                     (inputs, initial_conds, ensembles_targets) = encode_inputs(
-                        test_X, test_y, place_cell_ensembles, head_direction_ensembles, device, coder=coder,
+                        test_X, test_y, place_cell_ensembles, head_direction_ensembles, device, radial=argsdict["env_watermaze"], coder=coder,
                     )
                     outs = model.forward(inputs, initial_conds)
                     (bottleneck_acts, logits_pc, logits_hd, pc_targets, hd_targets) = decode_outputs(
