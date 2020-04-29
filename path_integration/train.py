@@ -35,7 +35,7 @@ parser.add_argument(
     default="./experiments/results/",
     help="path to save the experimental config, logs, model. This is not automatically generated.",
 )
-parser.add_argument("--use_saved_model_dir", type=str, default="", help="Directory of the previously trained model")
+parser.add_argument("--use_saved_model_dir", type=str, default="./experiments/results/2020-04-27_11-59/", help="Directory of the previously trained model")
 parser.add_argument("--disable_LSTM_training", action='store_true', help="Disable LSTM training")
 parser.add_argument("--seed", type=int, default=9999, help="random seed")
 parser.add_argument("--save_model_freq", type=int, default=10, help="Save model every X epochs")
@@ -80,13 +80,24 @@ model = GridTorch(
     n_switching_targets = N_SWITCHING_TARGETS
 ).to(device)
 start_epoch = 0
-if len(argsdict["use_saved_model_dir"])!=0:
+# This means we only load the LSTM module and not the rest:
+if argsdict["disable_LSTM_training"]:
+    saved_model_file = get_latest_model_file(argsdict["use_saved_model_dir"])
+    pretrained_dict = torch.load(saved_model_file)
+    model_dict = model.state_dict()
+    model_dict_tmp = model.state_dict()
+    to_change = ["lstm.weight_ih_l0","lstm.weight_hh_l0","lstm.bias_ih_l0","lstm.bias_hh_l0"]
+    pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in to_change}
+    model_dict.update(pretrained_dict) 
+    model.load_state_dict(model_dict)
+elif len(argsdict["use_saved_model_dir"])!=0:
     saved_model_file = get_latest_model_file(argsdict["use_saved_model_dir"])
     model.load_state_dict(torch.load(saved_model_file))
     model.to(device)
     start_epoch = get_model_epoch(saved_model_file)
     print("RESTORING MODEL AT:", saved_model_file)
     print("STARTING AT EPOCH:", start_epoch)
+
 
 # Definition of the loss
 def get_loss(logits_pc, logits_hd, pc_targets, hd_targets, bottleneck_acts):
