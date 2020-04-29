@@ -15,3 +15,11 @@
 [x] rerun the exp with second activation ReLU
 [ ] plot the SAC for the exp with second activation ReLU
 [ ] Give to Mandana the name of the experiment to use for LSTM PI module (to do today)
+
+## Mandana
+[x] Run PI experiment on watermaze.
+[x] Give to Arna the model trained on watermaze.
+[ ] Plot the grid code patterns for the trained model on watermaze.
+[ ] Rescale the environment and train the LSTM using previously generated ensemble to check if they are transferable.
+[ ] Collaborate with Arna to get the plots on the navigation tasks.
+
