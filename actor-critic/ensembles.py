@@ -179,31 +179,33 @@ class HeadDirectionCellEnsemble(CellEnsemble):
         super(HeadDirectionCellEnsemble, self).__init__(
             n_cells, soft_targets, soft_init
         )
-        if not radial:
-            # Create a random Von Mises with fixed cov over the position
-            rs = torch.manual_seed(seed)
-            uni = torch.distributions.Uniform(-np.pi, np.pi)
-            self.means = uni.sample((n_cells,))
-            self.kappa = torch.ones_like(self.means) * concentration
-        else: # for watermaze
-            self.direction = [
-                np.pi / 2,  # north
-                np.pi / 4,  # north-east
-                0,  # east
-                7 * np.pi / 4,  # south-east
-                3 * np.pi / 2,  # south
-                5 * np.pi / 4,  # south-west
-                np.pi,  # west
-                3 * np.pi / 4,  # north-west
-            ]
+        # if not radial:
+        # Create a random Von Mises with fixed cov over the position
+        rs = torch.manual_seed(seed)
+        uni = torch.distributions.Uniform(-np.pi, np.pi)
+        self.means = uni.sample((n_cells,))
+        self.kappa = torch.ones_like(self.means) * concentration
+        # else: # for watermaze
+        #     self.direction = [
+        #         np.pi / 2,  # north
+        #         np.pi / 4,  # north-east
+        #         0,  # east
+        #         7 * np.pi / 4,  # south-east
+        #         3 * np.pi / 2,  # south
+        #         5 * np.pi / 4,  # south-west
+        #         np.pi,  # west
+        #         3 * np.pi / 4,  # north-west
+        #     ]
 
-            headDirections = np.random.choice(self.direction, self.n_cells)
-            groundtruth = torch.Tensor(headDirections)
-            self.means = groundtruth
-            #self.means = torch.tensor(np.concatenate((directionX[:, None], directionY[:, None]), axis=1))
+            # headDirections = np.random.choice(self.direction, self.n_cells)
+            # groundtruth = torch.Tensor(headDirections)
+            # self.means = groundtruth
+            # #self.means = torch.tensor(np.concatenate((directionX[:, None], directionY[:, None]), axis=1))
 
     def unnor_logpdf(self, x, radial):
-        if radial:
-            return x - self.means[None, None, :], self.means
-        else:
-            return self.kappa * torch.cos(x - self.means[None, None, :])
+        # if radial:
+        #     print(x.size())
+        #     print(self.means.size())
+        #     return x - self.means[None, None, :], self.means
+        # else:
+        return self.kappa * torch.cos(x - self.means[None, None, :]), self.means

@@ -5,7 +5,7 @@ from matplotlib import cm
 import math
 from matplotlib.patches import Circle
 import mpl_toolkits.mplot3d.art3d as art3d
-from tqdm.notebook import tqdm
+from tqdm import tqdm
 ####################################################################################################
 # watermaze module
 ####################################################################################################
@@ -106,7 +106,7 @@ class watermaze(object):
 
         #fill the trajectory dictionary
         trajectory['prev_pos'] = self.position[:, self.t]
-        trajectory['prev_hd'] = np.arctan2(self.prevdir[1], self.prevdir[0])
+        trajectory['prev_hd'] = [np.arctan2(self.prevdir[1], self.prevdir[0])]
         trajectory['ego_vel'] = [velocity, math.sin(angular_velocity), math.cos(angular_velocity)]
         trajectory['target_pos'] = self.position[:, self.t + 1]
         trajectory['target_hd'] = np.arctan2(direction[1], direction[0])

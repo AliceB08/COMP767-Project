@@ -9,7 +9,7 @@ import pickle
 class Dataset(data.Dataset):
     "Characterizes a dataset for PyTorch"
 
-    def __init__(self, data_loc="./data/new_watermaze_data.pkl", batch_size=128):
+    def __init__(self, data_loc="./data/new_watermaze_data_2.pkl", batch_size=128):
         "Initialization"
         self.data_loc = data_loc
         self.data = None
@@ -33,7 +33,7 @@ class Dataset(data.Dataset):
         )
         y = (
             Tensor(loaded_data[index]["target_pos"]),
-            Tensor(loaded_data[index]["target_hd"]),
+            Tensor(loaded_data[index]["target_hd"]).unsqueeze(dim=-1),
         )
         return X, y
 

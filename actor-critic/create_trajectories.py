@@ -41,7 +41,7 @@ for e in tqdm(range(num_episodes)):
 
 print(len(trajectories.keys()))
 # filename = "./data/tmp_watermaze_data.pkl"
-filename = "new_watermaze_data.pkl"
+filename = "new_watermaze_data_2.pkl"
 f = open(filename, "wb")
 pickle.dump(trajectories, f)
 f.close()
