@@ -9,7 +9,7 @@ import pickle
 class Dataset(data.Dataset):
     "Characterizes a dataset for PyTorch"
 
-    def __init__(self, data_loc="./data/watermaze_data.pkl", batch_size=128):
+    def __init__(self, data_loc="./data/new_watermaze_data.pkl", batch_size=128):
         "Initialization"
         self.data_loc = data_loc
         self.data = None
@@ -17,7 +17,7 @@ class Dataset(data.Dataset):
 
     def __len__(self):
         "Denotes the total number of samples"
-        return int(3000)
+        return int(500)
 
     def __getitem__(self, index):
         "Generates one sample of data"
