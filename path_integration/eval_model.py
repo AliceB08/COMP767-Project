@@ -129,7 +129,7 @@ if __name__ == "__main__":
     ]
 
     """Uncomment the following lines to generate the PDF"""
-    experiment = EXPERIMENTS[-1]
+    experiment = EXPERIMENTS[0]
     create_rate_maps(experiment, experiment in OLD_EXPERIMENTS)
     print(f"Done in {time.time()-start:.0f} seconds for batch size {BATCH_SIZE}")
 

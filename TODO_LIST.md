@@ -11,7 +11,7 @@
 [x] Rerun the switching thing with 3 targets (doing, should be finished tomorrow lunchtime)
 [ ] Plot the SAC with news switching targets
 [x] check that the loss is going down with the switching targets
-[ ] Retrain with freezing the weights of the LSTM
+[x] Retrain with freezing the weights of the LSTM
 [x] rerun the exp with second activation ReLU
 [ ] plot the SAC for the exp with second activation ReLU
 [ ] Give to Mandana the name of the experiment to use for LSTM PI module (to do today)
@@ -23,3 +23,6 @@
 [ ] Rescale the environment and train the LSTM using previously generated ensemble to check if they are transferable.
 [ ] Collaborate with Arna to get the plots on the navigation tasks.
 
+## General
+[ ] Clean github
+[ ] Add TAs and Doina to github

@@ -250,3 +250,43 @@ def get_scores_and_plot(
         np.asarray(map(np.mean, max_60_mask)),
         np.asarray(map(np.mean, max_90_mask)),
     )
+
+
+class PadCoder(torch.nn.Module):
+
+    def __init__(self, pad_length):
+        super(PadCoder, self).__init__()
+        assert pad_length > 0
+        self.l = int(pad_length)
+
+    def code(self, x, target=False, value=None):
+        """
+        expects x with shape [B X T X N]
+        with batch size B, T time steps and N inputs
+        """
+        cuda = x.device != 'cpu'
+        x = x.transpose(1, 2)
+        zeros = torch.zeros_like(x)
+        if cuda:
+            zeros = zeros.cuda()
+
+        if target:
+            pad = x.unsqueeze(-1).repeat(1, 1, 1, self.l)
+        elif target:
+            pad = zeros.unsqueeze(-1).repeat(1, 1, 1, self.l)
+        else:
+            ones = torch.ones_like(x)
+            v = value.unsqueeze(-1).repeat(1, ones.shape[-1])
+            ones[:] = v
+            pad = ones.unsqueeze(-1).repeat(1, 1, 1, self.l)
+
+
+        x_new = torch.cat((x.unsqueeze(-1), pad), -1)
+        x_new = x_new.view(x_new.shape[0], x_new.shape[1], -1)
+
+        assert x_new.shape[-1] == x.shape[-1] * (self.l + 1)
+        x_new = x_new.transpose(1, 2)
+        return x_new
+
+    def forward(self, x, **kwargs):
+        return self.code(x, **kwargs)

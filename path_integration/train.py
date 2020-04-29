@@ -9,7 +9,7 @@ from dataloading import Dataset
 from model_utils import get_latest_model_file, get_model_epoch
 from model_lstm import GridTorch
 from utils import *
-from misc.rate_coding import PadCoder
+from utils import PadCoder
 import os
 import time
 
@@ -35,7 +35,7 @@ parser.add_argument(
     default="./experiments/results/",
     help="path to save the experimental config, logs, model. This is not automatically generated.",
 )
-parser.add_argument("--use_saved_model_dir", type=str, default="./experiments/results/2020-04-27_11-59/", help="Directory of the previously trained model")
+parser.add_argument("--use_saved_model_dir", type=str, default="", help="Directory of the previously trained model")
 parser.add_argument("--disable_LSTM_training", action='store_true', help="Disable LSTM training")
 parser.add_argument("--seed", type=int, default=9999, help="random seed")
 parser.add_argument("--save_model_freq", type=int, default=10, help="Save model every X epochs")

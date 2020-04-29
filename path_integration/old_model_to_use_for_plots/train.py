@@ -9,7 +9,7 @@ from dataloading import Dataset
 from model_utils import get_latest_model_file, get_model_epoch
 from model_lstm import GridTorch
 from utils import *
-from misc.rate_coding import PadCoder
+from utils import PadCoder
 import os
 import time
 
