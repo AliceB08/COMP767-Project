@@ -63,6 +63,7 @@ test_generator = data.DataLoader(dataset, **test_params)
 # Create the ensembles that provide targets during training
 place_cell_ensembles = get_place_cell_ensembles(env_size=argsdict["env_size"], neurons_seed=argsdict["seed"], n_pc=N_PC, \
                                                 radial=argsdict["env_watermaze"], radius=argsdict["radius"])
+
 head_direction_ensembles = get_head_direction_ensembles(neurons_seed=argsdict["seed"], n_hdc=N_HDC, \
                                                         radial=argsdict["env_watermaze"], radius=argsdict["radius"])
 target_ensembles = place_cell_ensembles + head_direction_ensembles
@@ -97,6 +98,7 @@ if __name__ == "__main__":
     print("DEVICE PROPERTIES:", torch.cuda.get_device_properties(0))
     torch.save(target_ensembles, argsdict["save_dir"] + "target_ensembles.pt")
     torch.save(model.state_dict(), argsdict["save_dir"] + "model_epoch_0.pt")
+
     all_train_losses = []
     all_eval_losses = []
     times = []
@@ -109,7 +111,7 @@ if __name__ == "__main__":
         losses = []
         for X, y in data_generator:
             optimiser.zero_grad()
-            (inputs, initial_conds, ensembles_targets,) = encode_inputs(
+            (inputs, initial_conds, ensembles_targets,), plc_centers = encode_inputs(
                 X, y, place_cell_ensembles, head_direction_ensembles, device, radial=argsdict["env_watermaze"], coder=coder
             )
             outs = model.forward(inputs, initial_conds)
@@ -150,7 +152,7 @@ if __name__ == "__main__":
                     break
     print("TRAINING LOSSES:", all_train_losses)
     print("EVALUATION LOSSES:", all_eval_losses)
-
+    torch.save(plc_centers, argsdict["save_dir"] + "model_plc_centers.pt")
     # SAVE LOSS VALUES
     lc_path = os.path.join(argsdict["save_dir"], "learning_info.npy")
     print("\nDONE\n\nSaving learning info to " + lc_path)

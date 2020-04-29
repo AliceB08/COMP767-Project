@@ -81,7 +81,7 @@ class CellEnsemble(object):
         if self.soft_targets == "normalized":
             targets = torch.exp(self.unnor_logpdf(x))
         elif self.soft_targets == "softmax":
-            lp = self.log_posterior(x, radial)
+            lp, centers = self.log_posterior(x, radial)
             targets = softmax(lp)
         elif self.soft_targets == "sample":
             lp = self.log_posterior(x)
@@ -97,7 +97,7 @@ class CellEnsemble(object):
         if self.soft_init == "normalized":
             init = torch.exp(self.unnor_logpdf(x))
         elif self.soft_init == "softmax":
-            lp = self.log_posterior(x, radial)
+            lp, centers = self.log_posterior(x, radial)
             init = softmax(lp)
         elif self.soft_init == "sample":
             lp = self.log_posterior(x)
@@ -109,7 +109,7 @@ class CellEnsemble(object):
             init = torch.zeros_like(self.unnor_logpdf(x))
 
             print(init)
-        return init
+        return init, centers
 
     def loss(self, predictions, targets):
         """Loss."""
@@ -123,9 +123,9 @@ class CellEnsemble(object):
         return loss
 
     def log_posterior(self, x, radial):
-        logp = self.unnor_logpdf(x, radial)
+        logp, centers = self.unnor_logpdf(x, radial)
         log_posteriors = logp - torch.logsumexp(logp, dim=2, keepdim=True)
-        return log_posteriors
+        return log_posteriors, centers
 
 
 class PlaceCellEnsemble(CellEnsemble):
@@ -167,7 +167,7 @@ class PlaceCellEnsemble(CellEnsemble):
         diff = trajs[:, :, None, :] - self.means[None, None, ...]
         unnor_logp = -0.5 * torch.sum((diff ** 2) / self.variances, dim=-1)
 
-        return unnor_logp
+        return unnor_logp, self.means
 
 
 class HeadDirectionCellEnsemble(CellEnsemble):
@@ -185,7 +185,7 @@ class HeadDirectionCellEnsemble(CellEnsemble):
             uni = torch.distributions.Uniform(-np.pi, np.pi)
             self.means = uni.sample((n_cells,))
             self.kappa = torch.ones_like(self.means) * concentration
-        else: #head direction cells for watermaze
+        else: # for watermaze
             self.direction = [
                 np.pi / 2,  # north
                 np.pi / 4,  # north-east
@@ -197,20 +197,13 @@ class HeadDirectionCellEnsemble(CellEnsemble):
                 3 * np.pi / 4,  # north-west
             ]
 
-            #direction = headDirection * self.stepsize
-            #headDirections = []
             headDirections = np.random.choice(self.direction, self.n_cells)
-            # for n in range(self.n_cells):
-            #     direction = np.array([np.cos(direction_list[n]), np.sin(direction_list[n])])
-            #     direction = direction/np.sqrt((direction**2).sum())
-            #     headDirections.append(direction)
-
             groundtruth = torch.Tensor(headDirections)
             self.means = groundtruth
             #self.means = torch.tensor(np.concatenate((directionX[:, None], directionY[:, None]), axis=1))
 
     def unnor_logpdf(self, x, radial):
         if radial:
-            return x - self.means[None, None, :]
+            return x - self.means[None, None, :], self.means
         else:
             return self.kappa * torch.cos(x - self.means[None, None, :])

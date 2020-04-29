@@ -97,7 +97,7 @@ def encode_inputs(X, y, place_cell_ensembles, head_direction_ensembles, device, 
     init_pos, init_hd, inputs = X
     target_pos, target_hd = y
 
-    initial_conds = encode_initial_conditions(init_pos, init_hd, place_cell_ensembles, head_direction_ensembles, radial)
+    initial_conds, plc_centers = encode_initial_conditions(init_pos, init_hd, place_cell_ensembles, head_direction_ensembles, radial)
     ensembles_targets = encode_targets(target_pos, target_hd, place_cell_ensembles, head_direction_ensembles, radial)
 
     init_pos = init_pos.to(device)
@@ -113,7 +113,7 @@ def encode_inputs(X, y, place_cell_ensembles, head_direction_ensembles, device, 
         target_hd = coder(target_hd, target=True)
 
     inputs = inputs.transpose(1, 0)
-    return (inputs, initial_conds, ensembles_targets)
+    return (inputs, initial_conds, ensembles_targets), plc_centers
 
 
 def decode_outputs(outs, ensembles_targets, device, N_PC, N_HDC, coder=None):
@@ -141,10 +141,12 @@ def decode_outputs(outs, ensembles_targets, device, N_PC, N_HDC, coder=None):
 def encode_initial_conditions(init_pos, init_hd, place_cell_ensembles, head_direction_ensembles, radial=False):
     initial_conds = []
     for ens in place_cell_ensembles:
-        initial_conds.append(torch.squeeze(ens.get_init(init_pos[:, None, :], radial), dim=1))
+        init, plc_centers = ens.get_init(init_pos[:, None, :], radial)
+        initial_conds.append(torch.squeeze(init, dim=1))
     for ens in head_direction_ensembles:
-        initial_conds.append(torch.squeeze(ens.get_init(init_hd[:, None, :], radial), dim=1))
-    return initial_conds
+        init, _ = ens.get_init(init_hd[:, None, :], radial)
+        initial_conds.append(torch.squeeze(init, dim=1))
+    return initial_conds, plc_centers
 
 
 def encode_targets(target_pos, target_hd, place_cell_ensembles, head_direction_ensembles, radial=False):
