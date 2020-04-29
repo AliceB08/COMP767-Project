@@ -5,7 +5,7 @@ from matplotlib import cm
 import math
 from matplotlib.patches import Circle
 import mpl_toolkits.mplot3d.art3d as art3d
-from tqdm import tqdm
+from tqdm.notebook import tqdm
 ####################################################################################################
 # watermaze module
 ####################################################################################################
@@ -72,14 +72,12 @@ class watermaze(object):
     ####################################################################
     # for updating the rat's position in the pool
     def move(self, A):
-
         """
         Updates the simulated rat's position in the water-maze environment by moving it in the 
         specified direction. 
-        
+
         - The argument A is the last selected action, and must be an integer from 0-7, with 0 indicating N, 
         1 indicating NE, etc. 
-
         """
         trajectory = {}
 
@@ -103,15 +101,15 @@ class watermaze(object):
         if (np.linalg.norm(newposition) == self.radius):
             newposition = np.multiply(np.divide(newposition, np.linalg.norm(newposition)), (self.radius - 1))
 
-        angular_velocity = np.sum((direction - self.prevdir)**2)
+        angular_velocity = np.arctan2(direction[1],direction[0])-np.arctan2(self.prevdir[1],self.prevdir[0])
         velocity = np.sum((newposition-self.position[:, self.t])**2)
 
         #fill the trajectory dictionary
-        trajectory["init_pos"] = self.position[:, 0]
-        trajectory["init_hd"] = [np.arctan2(self.prevdir[1], self.prevdir[0])]
-        trajectory["ego_vel"] = [velocity, math.sin(angular_velocity), math.cos(angular_velocity)]
-        trajectory["target_pos"] = self.position[:, self.t - 1]
-        trajectory["target_hd"] = [np.arctan2(direction[1], direction[0])]
+        trajectory['prev_pos'] = self.position[:, self.t]
+        trajectory['prev_hd'] = np.arctan2(self.prevdir[1], self.prevdir[0])
+        trajectory['ego_vel'] = [velocity, math.sin(angular_velocity), math.cos(angular_velocity)]
+        trajectory['target_pos'] = self.position[:, self.t + 1]
+        trajectory['target_hd'] = np.arctan2(direction[1], direction[0])
 
         # update the position, time (and previous direction)
         self.position[:, self.t+1] = newposition
@@ -273,7 +271,10 @@ class watermaze(object):
         
         return np.sqrt(np.sum((self.position[:,self.t] - self.platform_location)**2)) <= (self.platform_radius + 1)
 
-class RWMTask(watermaze):
+    def update_platform_location(self,day):
+        pass
+
+class RMWTask(watermaze):
     def __init__(self,pool_radius=60, platform_radius=10, platform_location=np.array([25,25]), 
         stepsize=5.0, momentum=0.2, T=60,days=10,alternate_platform_location=None):
         watermaze.__init__(self,pool_radius=pool_radius, platform_radius=platform_radius, platform_location=platform_location, 
@@ -303,19 +304,19 @@ class DMPTask(watermaze):
         self.original_platform_location = self.platform_location
         self.alternate_platform_location_seq = alternate_platform_location_seq
         if alternate_platform_location_seq is None:
-            self.rot_angle_seq = np.random.permutation(np.linspace(1,days-1,days-1))*2*np.pi/self.days
+            # self.rot_angle_seq = np.random.permutation(np.linspace(1,self.days,self.days)*2*np.pi/self.days)
+            self.rot_angle_seq = 2*np.pi*np.random.uniform(0,1,(self.days,))
         self.platform_swtiched = np.zeros((self.days,))
 
     def update_platform_location(self,day):
-        if day==1 or self.platform_swtiched[day-1]:
+        if self.platform_swtiched[day-1]:
             return
         if self.alternate_platform_location_seq is not None:
             self.platform_location = self.alternate_platform_location_seq[day-2]
         else:
-            angle = self.rot_angle_seq[day-2]
+            angle = self.rot_angle_seq[day-1]
             new_location = np.array([int(np.cos(angle)*self.original_platform_location[0]-np.sin(angle)*self.original_platform_location[1])
                 ,int(np.sin(angle)*self.original_platform_location[0]+np.cos(angle)*self.original_platform_location[1])]) 
             self.platform_location = new_location
+            # print(180*angle/np.pi,self.platform_location)
         self.platform_swtiched[day-1] = True
-        # print(self.platform_location)
-
