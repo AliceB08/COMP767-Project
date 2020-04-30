@@ -11,7 +11,7 @@ from datetime import datetime
 import time
 from tqdm import tqdm
 
-from model_lstm import GridTorch
+from model_lstm import GridTorch, GridTorch_nonNeg
 from scores import GridScorer
 from utils import *
 # from generate_gif import generate_gif
@@ -22,7 +22,7 @@ RADIUS= 60
 BATCH_SIZE = 256 #1024
 SEED = 9999
 N_PC = [256]
-PC_SCALE = [10] # [0.01] [10]
+PC_SCALE = [1] # [0.01] [10]
 N_HDC = [8]
 data_params = {"batch_size": BATCH_SIZE, "shuffle": False, "num_workers": 8}
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -86,7 +86,7 @@ def create_rate_maps(exp, old_experiment, epoch_nb=None, create_PDF=True, create
         generate_gif(scorer, pos_xy, acts, "./ratemaps/", get_file_name(exp, epoch_nb), epoch=epoch_nb)
 
 
-def create_rate_maps_maze(model_path,target_ensemble_path,exp,epoch_nb=None,create_PDF=True,create_gif_frame=False):
+def create_rate_maps_maze(model_path,target_ensemble_path,exp,non_negativity=False,epoch_nb=None,create_PDF=True,create_gif_frame=False):
     # Load dataset
     dataset = Dataset(batch_size=data_params['batch_size'])
     data_generator = data.DataLoader(dataset, **data_params)
@@ -107,7 +107,10 @@ def create_rate_maps_maze(model_path,target_ensemble_path,exp,epoch_nb=None,crea
     head_direction_ensembles[0].kappa = torch.Tensor(saved_targets[1].kappa)
 
     # load the saved model
-    model = GridTorch(target_ensembles,n_pcs=N_PC[0],n_hdcs=N_HDC[0])
+    if not non_negativity:
+        model = GridTorch(target_ensembles,n_pcs=N_PC[0],n_hdcs=N_HDC[0])
+    else:
+        model = GridTorch_nonNeg(target_ensembles,n_pcs=N_PC[0],n_hdcs=N_HDC[0])
     model.load_state_dict(torch.load(model_path,map_location='cpu'))
     model.eval()
 
@@ -156,8 +159,8 @@ if __name__ == "__main__":
     # print(f"Done in {time.time()-start:.0f} seconds for batch size {BATCH_SIZE}")
 
     ''' Below is the updated plotting for watermaze environment firing rates'''
-    model_path = 'exp3/model_epoch_4399.pt'
-    target_ensemble_path = 'exp3/target_ensembles.pt'
-    create_rate_maps_maze(model_path=model_path,target_ensemble_path=target_ensemble_path,exp='exp3_90',create_PDF=True)
+    model_path = 'exp4/model_epoch_4799.pt'
+    target_ensemble_path = 'exp4/target_ensembles.pt'
+    create_rate_maps_maze(model_path=model_path,target_ensemble_path=target_ensemble_path,non_negativity=False,exp='exp4_90',create_PDF=True)
     print(f"Done in {time.time()-start:.0f} seconds for batch size {BATCH_SIZE}")    
 
