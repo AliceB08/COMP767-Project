@@ -8,7 +8,7 @@ data/*
 
 # Other
 tensorflow_implementation/*
-path_integration/experiments/*
+path_integration/experiments/results/*
 path_integration/images/*
 **/*.pdf
 **/slurm*.out

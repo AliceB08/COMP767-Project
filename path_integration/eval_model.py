@@ -39,14 +39,14 @@ def get_file_name(exp, epoch_nb):
 
 def create_rate_maps(exp, old_experiment, epoch_nb=None, create_PDF=True, create_gif_frame=False, target_set_nb=0, sort_by_score=60):
     if epoch_nb == None:
-        epoch_nb = get_model_epoch(get_latest_model_file(f"./experiments/results/{exp}/"))
+        epoch_nb = get_model_epoch(get_latest_model_file(f"./experiments/{exp}/"))
     # Loading datasets
     dataset = Dataset(batch_size=data_params["batch_size"])
     data_generator = data.DataLoader(dataset, **data_params)
 
     # Create the ensembles that provide targets during training
 
-    tmp = torch.load(f"./experiments/results/{exp}/target_ensembles.pt")
+    tmp = torch.load(f"./experiments/{exp}/target_ensembles.pt")
 
     if old_experiment:
         place_cell_ensembles = get_place_cell_ensembles(env_size=ENV_SIZE, neurons_seed=SEED, n_pc=N_PC)
@@ -57,7 +57,7 @@ def create_rate_maps(exp, old_experiment, epoch_nb=None, create_PDF=True, create
         head_direction_ensembles[0].means = torch.Tensor(tmp[1].means)
         head_direction_ensembles[0].kappa = torch.Tensor(tmp[1].kappa)
         model = OldGridTorch(target_ensembles, non_linearity=get_exp_non_linearity(exp))
-        model.load_state_dict(torch.load(f"./experiments/results/{exp}/model_epoch_{epoch_nb}.pt"))
+        model.load_state_dict(torch.load(f"./experiments/{exp}/model_epoch_{epoch_nb}.pt"))
     else:
         N_SWITCHING_TARGETS = len(tmp)
         target_ensembles = []
@@ -73,7 +73,7 @@ def create_rate_maps(exp, old_experiment, epoch_nb=None, create_PDF=True, create
         model = GridTorch(
             target_ensembles, non_linearity=get_exp_non_linearity(exp), n_switching_targets=N_SWITCHING_TARGETS
         )
-        model.load_state_dict(torch.load(f"./experiments/results/{exp}/model_epoch_{epoch_nb}.pt"))
+        model.load_state_dict(torch.load(f"./experiments/{exp}/model_epoch_{epoch_nb}.pt"))
 
     model.eval()
 
@@ -103,38 +103,38 @@ def create_rate_maps(exp, old_experiment, epoch_nb=None, create_PDF=True, create
     scorer = GridScorer(20, ((-1.1, 1.1), (-1.1, 1.1)), masks_parameters)
 
     if create_PDF:
-        _ = get_scores_and_plot(scorer, pos_xy, acts, "./ratemaps/", get_file_name(exp, epoch_nb), sort_by_score=sort_by_score)
+        _ = get_scores_and_plot(scorer, pos_xy, acts, f"./experiments/{exp}/", get_file_name(exp, epoch_nb), sort_by_score=sort_by_score)
     if create_gif_frame:
-        generate_gif(scorer, pos_xy, acts, "./ratemaps/", get_file_name(exp, epoch_nb), epoch=epoch_nb)
+        generate_gif(scorer, pos_xy, acts, f"./experiments/{exp}/", get_file_name(exp, epoch_nb), epoch=epoch_nb)
 
 
 if __name__ == "__main__":
     start = time.time()
-    EXPERIMENTS = [
-        "2020-04-15_14-40",
-        "2020-04-15_15-25",
-        "2020-04-15_16-21",
-        "2020-04-22_17-06",
-        "2020-04-23_14-23",
-        "2020-04-24_15-41",
-        "2020-04-27_16-49",
-    ]
-    # Breaking change when using switching layer + target ensemble, specify the old experiments
-    OLD_EXPERIMENTS = [
-        "2020-04-15_14-40",
-        "2020-04-15_15-25",
-        "2020-04-15_16-21",
-        "2020-04-22_17-06",
-        "2020-04-23_14-23",
-    ]
+    '''
+    List of experiments:
+    1 - Original
+    2 - PadCoder
+    3 - Dropout=0.5
+    4 - Transfer Learning
+    5 - tanh
+    6 - ReLU
+    7 - HDC
+    8 - PC
+    New architecture:
+    9 - Switchin Heads
+    10 - Agnostic hypothesis
+    11 - Second ReLU
+    '''
 
     """Uncomment the following lines to generate the PDF"""
-    experiment = EXPERIMENTS[0]
-    create_rate_maps(experiment, experiment in OLD_EXPERIMENTS, sort_by_score=90)
+    experiment_nb = 1
+    experiment_folder = f"PI_EXP_{experiment_nb}"
+    create_rate_maps(experiment_folder, experiment_nb<9, sort_by_score=60)
     print(f"Done in {time.time()-start:.0f} seconds for batch size {BATCH_SIZE}")
 
     """Uncomment the following lines to generate the gif"""
-    # experiment = EXPERIMENTS[0]
+    # experiment_nb = 1
+    # experiment_folder = f"PI_EXP_{experiment_nb}"
     # for epoch in tqdm(range(9, 2000, 10)):
-    #     create_rate_maps(experiment, experiment in OLD_EXPERIMENTS, epoch_nb=epoch, create_gif_frame=True, create_PDF=False)
+    #     create_rate_maps(experiment_folder, experiment_nb<9, epoch_nb=epoch, create_gif_frame=True, create_PDF=False)
     # print(f"Done in {time.time()-start:.0f} seconds for batch size {BATCH_SIZE}")
