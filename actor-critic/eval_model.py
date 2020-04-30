@@ -58,7 +58,7 @@ def create_rate_maps(exp, old_experiment, epoch_nb=None, create_PDF=True, create
         model = OldGridTorch(target_ensembles, non_linearity=get_exp_non_linearity(exp))
     else:
         model = GridTorch(target_ensembles, non_linearity=get_exp_non_linearity(exp))
-    model.load_state_dict(torch.load(f"./experiments/results/{exp}/model_epoch_{epoch_nb}.pt"))
+    model.load_state_dict(torch.load(f"./experiments/results/{exp}/model_epoch_{epoch_nb}.pt", map_location='cpu'))
     model.eval()
 
     for X, y in data_generator:

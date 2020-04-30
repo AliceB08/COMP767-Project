@@ -22,7 +22,7 @@ parser.add_argument("--steps", type=int, default=100, help="steps per epoch")
 parser.add_argument("--batch_size", type=int, default=128, help="size of one minibatch")
 parser.add_argument("--grad_clip", type=float, default=1e-5, help="gradient clipping")
 parser.add_argument("--num_place_cells", type=int, default=256, help="number of place cells")
-parser.add_argument("--stdev_place_cells", type=float, default=10, help="stdev (scale) of place cells")
+parser.add_argument("--stdev_place_cells", type=float, default=1, help="stdev (scale) of place cells")
 parser.add_argument("--num_headD_cells", type=int, default=8, help="number of head direction cells")
 parser.add_argument("--btln_dropout", type=float, default=0.5, help="bottleneck dropout")
 parser.add_argument("--non_negativity", type=bool, default=False, help="induces non-negativity constraint in model")
@@ -72,9 +72,10 @@ target_ensembles = place_cell_ensembles + head_direction_ensembles
 
 # Create model and restore previous model if desired
 if argsdict["non_negativity"]:
-    model = GridTorch(target_ensembles=target_ensembles,  n_pcs=argsdict["num_place_cells"],  n_hdcs=argsdict["num_headD_cells"]).to(device)
-else:
     model = GridTorch_nonNeg(target_ensembles=target_ensembles,  n_pcs=argsdict["num_place_cells"],  n_hdcs=argsdict["num_headD_cells"]).to(device)
+
+else:
+    model = GridTorch(target_ensembles=target_ensembles,  n_pcs=argsdict["num_place_cells"],  n_hdcs=argsdict["num_headD_cells"]).to(device)
 start_epoch = 0
 if argsdict["use_saved_model"]:
     saved_model_file = get_latest_model_file(argsdict["save_dir"])

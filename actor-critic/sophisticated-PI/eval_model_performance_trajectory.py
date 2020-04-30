@@ -117,7 +117,7 @@ dataset = Dataset(batch_size=data_params['batch_size'])
 data_generator = data.DataLoader(dataset, batch_size=data_params['batch_size'])
 # create and load target_ensembles
 place_cell_ensembles = get_place_cell_ensembles(env_size=ENV_SIZE, neurons_seed=SEED, n_pc=N_PC, radial=True, 
-	radius=RADIUS,pc_scale=PC_SCALE)
+	radius=RADIUS, pc_scale=PC_SCALE)
 head_direction_ensembles = get_head_direction_ensembles(neurons_seed=SEED, n_hdc=N_HDC,
 	radial=True, radius=RADIUS)
 target_ensembles = place_cell_ensembles + head_direction_ensembles
