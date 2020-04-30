@@ -37,7 +37,7 @@ def get_file_name(exp, epoch_nb):
     return filename
 
 
-def create_rate_maps(exp, old_experiment, epoch_nb=None, create_PDF=True, create_gif_frame=False, target_set_nb=0):
+def create_rate_maps(exp, old_experiment, epoch_nb=None, create_PDF=True, create_gif_frame=False, target_set_nb=0, sort_by_score=60):
     if epoch_nb == None:
         epoch_nb = get_model_epoch(get_latest_model_file(f"./experiments/results/{exp}/"))
     # Loading datasets
@@ -103,7 +103,7 @@ def create_rate_maps(exp, old_experiment, epoch_nb=None, create_PDF=True, create
     scorer = GridScorer(20, ((-1.1, 1.1), (-1.1, 1.1)), masks_parameters)
 
     if create_PDF:
-        _ = get_scores_and_plot(scorer, pos_xy, acts, "./ratemaps/", get_file_name(exp, epoch_nb))
+        _ = get_scores_and_plot(scorer, pos_xy, acts, "./ratemaps/", get_file_name(exp, epoch_nb), sort_by_score=sort_by_score)
     if create_gif_frame:
         generate_gif(scorer, pos_xy, acts, "./ratemaps/", get_file_name(exp, epoch_nb), epoch=epoch_nb)
 
@@ -130,7 +130,7 @@ if __name__ == "__main__":
 
     """Uncomment the following lines to generate the PDF"""
     experiment = EXPERIMENTS[0]
-    create_rate_maps(experiment, experiment in OLD_EXPERIMENTS)
+    create_rate_maps(experiment, experiment in OLD_EXPERIMENTS, sort_by_score=90)
     print(f"Done in {time.time()-start:.0f} seconds for batch size {BATCH_SIZE}")
 
     """Uncomment the following lines to generate the gif"""
