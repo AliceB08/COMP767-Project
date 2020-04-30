@@ -316,7 +316,7 @@ if __name__=='__main__':
         elif featureCoding=='Tile':
             time_arr = AC.TD_lambda(alpha=0.3,lamda=0.6,day=1+(d-1)//sessions,episodes=episodes)    # hyperparams for tileCoding
         elif featureCoding=='Grid':
-            time_arr = AC.TD_lambda(alpha=0.00005,lamda=0.0,day=1+(d-1)//sessions,episodes=episodes)    # hyperparams for basic PathIntegration
+            time_arr = AC.TD_lambda(alpha=0.00003,lamda=0.9,day=1+(d-1)//sessions,episodes=episodes)    # hyperparams for basic PathIntegration
         # AC.plot_actor_preferences()
         # AC.plot_value_function()
         tqdm.write("{} {}".format(time_arr.mean(),time_arr.std()))
