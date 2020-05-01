@@ -32,7 +32,7 @@ parser.add_argument("--nb_switching_targets", type=int, default=1, help="Number 
 parser.add_argument(
     "--save_dir",
     type=str,
-    default="./experiments/results/",
+    default="./experiments/",
     help="path to save the experimental config, logs, model. This is not automatically generated.",
 )
 parser.add_argument("--use_saved_model_dir", type=str, default="", help="Directory of the previously trained model")
