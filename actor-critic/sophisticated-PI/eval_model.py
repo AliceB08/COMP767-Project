@@ -159,8 +159,8 @@ if __name__ == "__main__":
     # print(f"Done in {time.time()-start:.0f} seconds for batch size {BATCH_SIZE}")
 
     ''' Below is the updated plotting for watermaze environment firing rates'''
-    model_path = 'exp4/model_epoch_4799.pt'
-    target_ensemble_path = 'exp4/target_ensembles.pt'
-    create_rate_maps_maze(model_path=model_path,target_ensemble_path=target_ensemble_path,non_negativity=False,exp='exp4_90',create_PDF=True)
+    model_path = 'exp8/model_epoch_1999.pt'
+    target_ensemble_path = 'exp8/target_ensembles.pt'
+    create_rate_maps_maze(model_path=model_path, target_ensemble_path=target_ensemble_path, non_negativity=False, exp='exp8_90',create_PDF=True)
     print(f"Done in {time.time()-start:.0f} seconds for batch size {BATCH_SIZE}")    
 
