@@ -27,3 +27,7 @@ Once in the `path_integration` folder, you can execute the bash files in the `tr
 - `run_train_switching_targets.sh`: generates multiple target ensembles and the same number of last layers. Trains the model with switching targets.
 
 The weights and ratemaps for the path integration experiments are in the folder `experiments`.
+
+## Actor-Critic
+
+The necessary information to run the actor-critic is in the README in the `actor-critic` directory. See https://github.com/AliceB08/COMP767-Project/blob/master/actor-critic/README.md.
