@@ -1,5 +1,5 @@
 import numpy as np
-import random, warnings
+import os,random, warnings
 import matplotlib.pyplot as plt
 from matplotlib import cm
 import math
@@ -294,8 +294,8 @@ if __name__=='__main__':
     days = 10
     sessions = 3
     episodes = 200
-    featureCoding = 'Grid'     # 'Place' 'Grid' 'Tile'
-    append_goal = True
+    featureCoding = 'Tile'     # 'Place' 'Grid' 'Tile'
+    append_goal = False
     task = 1    # 0 - watermaze simple, 1 - RMW, 2 - DMP
     if task==0:
         maze = watermaze(T=60)
@@ -314,15 +314,18 @@ if __name__=='__main__':
         if featureCoding=='Place':
             time_arr = AC.TD_lambda(alpha=0.003,lamda=0.5,day=1+(d-1)//sessions,episodes=episodes)     # hyperparams for placeCellEncoding
         elif featureCoding=='Tile':
-            time_arr = AC.TD_lambda(alpha=0.3,lamda=0.6,day=1+(d-1)//sessions,episodes=episodes)    # hyperparams for tileCoding
+            time_arr = AC.TD_lambda(alpha=0.3,lamda=0.7,day=1+(d-1)//sessions,episodes=episodes)    # hyperparams for tileCoding
         elif featureCoding=='Grid':
-            time_arr = AC.TD_lambda(alpha=0.00003,lamda=0.9,day=1+(d-1)//sessions,episodes=episodes)    # hyperparams for basic PathIntegration
+            time_arr = AC.TD_lambda(alpha=0.00002,lamda=0.95,day=1+(d-1)//sessions,episodes=episodes)    # hyperparams for basic PathIntegration
         # AC.plot_actor_preferences()
         # AC.plot_value_function()
         tqdm.write("{} {}".format(time_arr.mean(),time_arr.std()))
         time_mean.append(time_arr.mean())
         time_std.append(time_arr.std()/np.sqrt(len(time_arr)))
     # plt.errorbar(np.linspace(1,days*sessions,days*sessions),time_mean,time_std)
+    # save the mean and sem arrays in a numpy file
+    np.save(os.path.join("navigationLogs","{}_escapeLatency_{}{}.npy".format(all_tasks[task],featureCoding,'_goal' if append_goal else '')),
+        np.stack((time_mean,time_std)))
     ## Plotting similar to paper figure
     tick_arr = []
     tick_label_arr = []

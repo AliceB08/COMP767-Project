@@ -203,7 +203,7 @@ def get_scores_and_plot(
     plot_graphs=True,  # pylint: disable=unused-argument
     nbins=20,  # pylint: disable=unused-argument
     cm="jet",
-    sort_by_score_60=True,
+    sort_by_score=60,
 ):
     """Plotting function."""
 
@@ -218,8 +218,10 @@ def get_scores_and_plot(
     # Separations
     # separations = map(np.mean, max_60_mask)
     # Sort by score if desired
-    if sort_by_score_60:
+    if sort_by_score==60:
         ordering = np.argsort(-np.array(score_60))
+    elif sort_by_score==90:
+        ordering = np.argsort(-np.array(score_90))
     else:
         ordering = range(n_units)
     # Plot
@@ -231,7 +233,10 @@ def get_scores_and_plot(
         acr = plt.subplot(rows * 2, cols, n_units + i + 1)
         if i < n_units:
             index = ordering[i]
-            title = "%d (%.2f)" % (index, score_60[index])
+            if sort_by_score==90:
+                title = "%d (%.2f)" % (index, score_90[index])
+            else:
+                title = "%d (%.2f)" % (index, score_60[index])
             # Plot the activation maps
             scorer.plot_ratemap(s[index], ax=rf, title=title, cmap=cm)
             # Plot the autocorrelation of the activation maps

@@ -25,3 +25,5 @@ Once in the `path_integration` folder, you can execute the bash files in the `tr
 - `run_test_pretrained_lstm.sh`: loads the pretrained LSTM from the last model in a folder given as argument, then generates new targets with a given seed and only trains the last layers on the trajectories.
 - `run_train_from_saved.sh`: loads a pre-trained model (all the model, not only the LSTM)
 - `run_train_switching_targets.sh`: generates multiple target ensembles and the same number of last layers. Trains the model with switching targets.
+
+The weights and ratemaps for the path integration experiments are in the folder `experiments`.
