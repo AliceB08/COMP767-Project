@@ -40,8 +40,11 @@ Files noted in order of workflow/pipeline:
 2. RL plots are in the [__navigation result plots__](navigation%20result%20plots/) folder
 -------------------------------------------------------------------
 ## Data
-* [__exp1__](./exp1/) --> contains the model from Mandana's experiment (no constraint and PC stdev=0.01) --> orthogonal (~1.5)
-* [__exp2__](./exp2/) --> contains the model from 2nd experiment (no constraint and PC stdev=10, higher validation error) --> weaker orthogonal (~1.2)
-* [__exp3__](./exp3/) --> contains the model from 3rd experiment (no constraint and PC stdev=10, diff hyperparams, similar validation error) --> orthogonal (~1.8)
-* [__exp4__](./exp4/) --> contains the model from 4th experiment (no constraint and PC stdev=1) --> mixture of orthogonal (~1.09, more cells) and hexagonal (~1.2, very few cells)
-* [__exp5__](./exp5/) --> contains the model from 5th experiment (non-negativity constraint and PC stdev=1) --> orthogonal (~1.67)
+* [__exp1__](experiments/exp1/) --> contains the model from Mandana's experiment (no constraint and PC stdev=0.01) --> orthogonal (~1.5)
+* [__exp2__](experiments/exp2/) --> contains the model from 2nd experiment (no constraint and PC stdev=10, higher validation error) --> weaker orthogonal (~1.2)
+* [__exp3__](experiments/exp3/) --> contains the model from 3rd experiment (no constraint and PC stdev=10, diff hyperparams, similar validation error) --> orthogonal (~1.8)
+* [__exp4__](experiments/exp4/) --> contains the model from 4th experiment (no constraint and PC stdev=1) --> mixture of orthogonal (~1.09, more cells) and hexagonal (~1.2, very few cells)
+* [__exp5__](experiments/exp5/) --> contains the model from 5th experiment (non-negativity constraint and PC stdev=1) --> orthogonal (~1.67)
+* [__exp6__](experiments/exp4/) --> contains the model from 6th experiment (no constraint and PC stdev=1, grid-code=512) --> mixture of orthogonal (~1.72, more cells)
+* [__exp7__](experiments/exp5/) --> contains the model from 7th experiment (non-negativity constraint and PC stdev=1, grid-code=256) --> orthogonal (~1.67), hexagonal (~0.49)  
+* [__exp8__](experiments/exp5/) --> contains the model from 8th experiment (non-negativity constraint and PC stdev=1, grid-code =512) --> orthogonal (~1.5),  hexagonal (~0.6)  
