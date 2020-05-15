@@ -71,7 +71,7 @@ class watermaze(object):
         
     ####################################################################
     # for updating the rat's position in the pool
-    def move(self, A):
+    def move(self, A, random_trajectory=False):
         """
         Updates the simulated rat's position in the water-maze environment by moving it in the 
         specified direction. 
@@ -93,6 +93,8 @@ class watermaze(object):
         direction = (1.0 - self.momentum)*newdirection + self.momentum*self.prevdir
         direction = direction/np.sqrt((direction**2).sum())
         direction = direction*self.stepsize
+        if random_trajectory:
+            direction = direction*np.mod(np.random.exponential(2.5),2.5)    # exponential distribution on velocity with max clipped of at 2*self.stepsize
 
         # update the position, prevent the rat from actually leaving the water-maze by having it "bounce" off the wall 
         [newposition, direction] = self.poolreflect(self.position[:, self.t] + direction)
@@ -203,21 +205,23 @@ class watermaze(object):
     
     ####################################################################
     # sets the start position of the rat in the pool
-    def startposition(self):
+    def startposition(self,random_trajectory=False):
 
         # select a random location from the main cardinal axes and calculate it's vector angle
         condition = 2*np.random.randint(0,4)
         # condition = 4
         angle = self.direction[condition]
+        if random_trajectory:
+            angle = np.random.uniform(0,2*np.pi)
 
         self.position[:,0] = np.asarray([np.cos(angle), np.sin(angle)]) * (self.radius - 1)
         
     ####################################################################
     # plot the most recent path of the rat through the pool
-    def plotpath(self):
+    def plotpath(self, live_plot=False):
         
         # create the figure 
-        fig = plt.figure()
+        fig = plt.figure('path')
         ax = fig.gca()
 
         # create the pool perimeter
@@ -249,7 +253,11 @@ class watermaze(object):
         plt.tight_layout()
 
         # show the figure
-        plt.show()
+        if live_plot:
+            plt.show(block=False)
+            plt.pause(0.1)
+        else:
+            plt.show()
         
     ####################################################################
     # checks whether the time is up
